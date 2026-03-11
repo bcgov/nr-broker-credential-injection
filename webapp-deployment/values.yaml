@@ -2,6 +2,7 @@ global:
   name: "knox-retriever-demo"
   namespace: "c2053d"
   short-env: "dev"
+  environment: "development"
 
 server:
   image:
