@@ -46,7 +46,7 @@ spec:
             name: vault-secret
             key: role
             optional: true
-      - name: BROKER_TOKEN
+      - name: BROKER_JWT
         valueFrom:
           secretKeyRef:
             name: vault-secret
