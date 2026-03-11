@@ -74,7 +74,7 @@ WRAPPED_MY_VAULT_TOKEN=$(curl -s -X POST "$VAULT_ADDR/v1/auth/vs_apps_approle/lo
 WRAPPED_TOKEN=$(echo "$WRAPPED_MY_VAULT_TOKEN" | jq -r '.wrap_info.token')
 
 echo "write wrapped token to the shared space"
-echo "$WRAPPED_TOKEN" > "$filename"
+printf '%s' "$WRAPPED_TOKEN" > "$filename"
 
 echo "===> Intention close"
 
