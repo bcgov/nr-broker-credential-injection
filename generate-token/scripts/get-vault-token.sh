@@ -3,10 +3,10 @@
 # Validate required environment variables
 BROKER_URL="${BROKER_URL:-https://broker.io.nrs.gov.bc.ca}"
 VAULT_ADDR="${VAULT_ADDR:-https://knox.io.nrs.gov.bc.ca}"
-: "${BROKER_JWT:?BROKER_JWT is required}"
-: "${VAULT_ROLE_ID:?VAULT_ROLE_ID is required}"
+: "${BROKER_TOKEN:?BROKER_TOKEN is required}"
 : "${INTENTION_EVENT_URL:?INTENTION_EVENT_URL is required}"
 : "${INTENTION_ENVIRONMENT:?INTENTION_ENVIRONMENT is required}"
+: "${VAULT_ROLE_ID:?VAULT_ROLE_ID is required}"
 
 INTENTION_TOKEN=""
 
@@ -34,7 +34,7 @@ echo "===> Intention open"
 # Open intention
 RESPONSE=$(curl -s -X POST "$BROKER_URL/v1/intention/open" \
     -H 'Content-Type: application/json' \
-    -H "Authorization: Bearer $BROKER_JWT" \
+    -H "Authorization: Bearer $BROKER_TOKEN" \
     -d "$(jq --arg event_url "$INTENTION_EVENT_URL" --arg user "${INTENTION_USER:-}" --arg env "$INTENTION_ENVIRONMENT" \
         '.event.url=$event_url | (if $user != "" then .user.name=$user else . end) | .actions[0].service.environment=$env' \
         ./config/intention.json)")
