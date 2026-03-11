@@ -58,11 +58,7 @@ spec:
             key: token
       - name: EVENT_URL
         value: "https://console.apps.silver.devops.gov.bc.ca/k8s/ns/c2053d-dev/pods/{{ .Values.global.name }}-init"
-    command:
-      - /bin/sh
-      - '-c'
-      - |
-        echo 'container starts!'
-        PROVISION_NAME=$(echo $INTENTION_DATA | jq -r '.actions[0].id')        
-        USER=$(echo $INTENTION_DATA | jq -r '.user.name')
-        ./get-vault-token.sh $BROKER_JWT $ROLE_ID $PROVISION_NAME $EVENT_URL $USER        
+      - name: USER
+        value: "$(echo $INTENTION_DATA | jq -r '.user.name')"
+      - name: ENVIRONMENT
+        value: "{{ .Values.global.environment }}"

@@ -1,23 +1,16 @@
-FROM docker.io/library/alpine
-RUN apk --update add jq
-RUN apk --update add curl
+FROM docker.io/library/alpine:3.21
+RUN apk --no-cache add curl jq
 ARG BROKER_URL="https://nr-broker.apps.silver.devops.gov.bc.ca"
 ARG VAULT_ADDR="https://knox.io.nrs.gov.bc.ca"
 ENV BROKER_URL=$BROKER_URL
 ENV VAULT_ADDR=$VAULT_ADDR
-ENV BROKER_JWT="JWT"
-ENV ROLE_ID="role_id"
-ENV PROVISION_NAME="name"
-ENV EVENT_URL="url"
-ENV USER="user"
 
-RUN mkdir /broker
+RUN adduser -D broker && mkdir /broker && chown broker:broker /broker
 
-COPY ./scripts/get-vault-token.sh /broker
+COPY --chown=broker:broker ./scripts/get-vault-token.sh /broker
 RUN chmod +x /broker/get-vault-token.sh
 VOLUME /broker/config 
 VOLUME /broker/output
 WORKDIR /broker
-# Set the entrypoint to the script with CMD arguments
+USER broker
 ENTRYPOINT ["./get-vault-token.sh"]
-CMD [BROKER_JWT,ROLE_ID,PROVISION_NAME,EVENT_URL,USER]
