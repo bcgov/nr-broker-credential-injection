@@ -22,7 +22,7 @@ set -e
 
 PROVISION_NAME=$(jq -r '.actions[0].id' ./config/intention.json)
 
-filename=./output/token.txt
+filename=./output/.vault-token
 
 if [ -f "$filename" ]; then
    rm "$filename"

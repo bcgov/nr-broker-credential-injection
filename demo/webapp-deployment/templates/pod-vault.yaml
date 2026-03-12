@@ -5,18 +5,18 @@ metadata:
   labels:
     app: {{ .Values.global.name }}
     purpose: {{ .Values.global.name }}
-spec:    
+spec:
   volumes:
     - name: shared-data
-      configMap: 
+      configMap:
         name: {{ .Values.global.name }}-intention-config
     - name: envconsul-config
       configMap:
         name: {{ .Values.global.name }}-envconsul-config
     - name: output
-      emptyDir: {}  
+      emptyDir: {}
   imagePullSecrets:
-  - name: vault-token-retrieve    
+  - name: vault-token-retrieve
   containers:
   - name: {{ .Values.global.name }}-nestapp
     image: "{{ .Values.server.image.registry }}{{ .Values.server.image.context }}/nest-app:v{{ .Values.app.version }}"
@@ -30,12 +30,12 @@ spec:
     args: ['-c', 'envconsul -config /config/envconsul/env.hcl node dist/main']
   initContainers:
   - name: {{ .Values.global.name }}-init
-    image: "{{ .Values.server.image.registry }}{{ .Values.server.image.context }}/nr-broker-openshift-knox-retriever:v{{ .Values.app.version }}"
+    image: "{{ .Values.server.image.registry }}{{ .Values.server.image.context }}/nr-broker-credential-injection:v{{ .Values.app.version }}"
     imagePullPolicy: Always
     ports:
       - containerPort: 3600
     volumeMounts:
-      - name: shared-data        
+      - name: shared-data
         mountPath: /broker/config
       - name: output
         mountPath: /broker/output

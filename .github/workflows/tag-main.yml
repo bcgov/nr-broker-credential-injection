@@ -26,11 +26,11 @@ jobs:
     permissions:
       contents: read
       packages: write
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-      
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v6
@@ -39,7 +39,7 @@ jobs:
           tags: |
             type=ref,event=pr
             type=raw,value=${{ github.ref_name }}
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -50,24 +50,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push nr-broker-openshift-knox-retriever Production Image
+      - name: Build and Push nr-broker-credential-injection Production Image
         uses: docker/build-push-action@v7
         with:
-          context: ./generate-token
+          context: ./
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/nr-broker-openshift-knox-retriever:${{ github.ref_name }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/nr-broker-credential-injection:${{ github.ref_name }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           build-args: |
             BROKER_URL=${{ vars.BROKER_URL }}
             VAULT_ADDR=${{ vars.VAULT_ADDR }}
-      
+
       - name: Build and Push nest-app Docker Image
         uses: docker/build-push-action@v7
         with:
-          context: ./nest-app 
-          push: true 
+          context: ./nest-app
+          push: true
           tags: |
             ${{ env.REGISTRY }}/${{ github.repository }}/nest-app:${{ github.ref_name }}
           labels: ${{ steps.meta.outputs.labels }}

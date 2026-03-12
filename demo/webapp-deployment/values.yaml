@@ -7,7 +7,7 @@ global:
 server:
   image:
     registry: "artifacts.developer.gov.bc.ca/github-docker-remote/"
-    context: "bcgov/nr-broker-openshift-knox-retriever"
+    context: "bcgov/nr-broker-credential-injection"
   route:
     internal:
       enabled: true

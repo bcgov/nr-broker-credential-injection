@@ -1,7 +1,7 @@
 vault {
   address = "https://knox.io.nrs.gov.bc.ca"
   renew_token = true
-  vault_agent_token_file = "/config/token/token.txt"
+  vault_agent_token_file = "/config/token/.vault-token"
   unwrap_token = true
   retry {
     enabled = true
