@@ -39,7 +39,7 @@ jobs:
           context: ./
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}:${{ github.event.number }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/init:${{ github.event.number }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -52,7 +52,7 @@ jobs:
           context: ./demo/nest-app
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/nest-app:${{ github.event.number }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/demo-nest-app:${{ github.event.number }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |

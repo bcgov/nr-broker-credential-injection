@@ -24,7 +24,7 @@ Pod startup
 ## initContainer Image
 
 ```
-ghcr.io/bcgov/nr-broker-credential-injection:v1.0.1
+ghcr.io/bcgov/nr-broker-credential-injection/init:v2.0.0
 ```
 
 The initContainer runs `get-vault-token.sh`, which handles the full token provisioning flow. It requires the following environment variables:
@@ -72,7 +72,7 @@ volumes:
 ```yaml
 initContainers:
   - name: vault-init
-    image: ghcr.io/bcgov/nr-broker-credential-injection:v1.0.1
+    image: ghcr.io/bcgov/nr-broker-credential-injection/init:v1.0.1
     volumeMounts:
       - name: intention-config
         mountPath: /broker/config

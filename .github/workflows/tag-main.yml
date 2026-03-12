@@ -56,7 +56,7 @@ jobs:
           context: ./
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}:${{ github.ref_name }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/init:${{ github.ref_name }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           build-args: |
@@ -69,7 +69,7 @@ jobs:
           context: ./demo/nest-app
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/nest-app:${{ github.ref_name }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/demo-nest-app:${{ github.ref_name }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           build-args: |

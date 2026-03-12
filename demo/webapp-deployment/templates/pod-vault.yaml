@@ -19,7 +19,7 @@ spec:
   - name: vault-token-retrieve
   containers:
   - name: {{ .Values.global.name }}-nestapp
-    image: "{{ .Values.server.image.registry }}{{ .Values.server.image.context }}/nest-app:v{{ .Values.app.version }}"
+    image: "{{ .Values.server.image.registry }}{{ .Values.server.image.context }}/demo-nest-app:v{{ .Values.app.version }}"
     imagePullPolicy: Always
     volumeMounts:
       - name: output
@@ -30,7 +30,7 @@ spec:
     args: ['-c', 'envconsul -config /config/envconsul/env.hcl node dist/main']
   initContainers:
   - name: {{ .Values.global.name }}-init
-    image: "{{ .Values.server.image.registry }}{{ .Values.server.image.context }}/nr-broker-credential-injection:v{{ .Values.app.version }}"
+    image: "{{ .Values.server.image.registry }}{{ .Values.server.image.context }}/init:v{{ .Values.app.version }}"
     imagePullPolicy: Always
     ports:
       - containerPort: 3600
