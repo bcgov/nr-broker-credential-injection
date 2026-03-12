@@ -39,7 +39,7 @@ jobs:
           context: ./
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/init:${{ github.event.number }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/intention-provision:${{ github.event.number }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |

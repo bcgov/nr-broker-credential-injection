@@ -8,12 +8,12 @@ The demo uses the `nodejs-sample` service registered in NR Broker. After deploym
 
 **initContainer** — retrieves a wrapped Vault token:
 ```
-ghcr.io/bcgov/nr-broker-credential-injection/init:v1.0.1
+ghcr.io/bcgov/nr-broker-credential-injection/intention-provision:v2.0.0
 ```
 
 **Application** — NestJS sample app with envconsul:
 ```
-ghcr.io/bcgov/nr-broker-credential-injection/demo-nest-app:v1.0.1
+ghcr.io/bcgov/nr-broker-credential-injection/demo-nest-app:v2.0.0
 ```
 
 ## Prerequisites

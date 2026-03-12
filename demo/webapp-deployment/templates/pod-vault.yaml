@@ -30,7 +30,7 @@ spec:
     args: ['-c', 'envconsul -config /config/envconsul/env.hcl node dist/main']
   initContainers:
   - name: {{ .Values.global.name }}-init
-    image: "{{ .Values.server.image.registry }}{{ .Values.server.image.context }}/init:v{{ .Values.app.version }}"
+    image: "{{ .Values.server.image.registry }}{{ .Values.server.image.context }}/intention-provision:v{{ .Values.app.version }}"
     imagePullPolicy: Always
     ports:
       - containerPort: 3600
