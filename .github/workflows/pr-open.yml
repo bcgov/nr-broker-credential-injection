@@ -39,7 +39,7 @@ jobs:
           context: ./
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/nr-broker-credential-injection:${{ github.event.number }}
+            ${{ env.REGISTRY }}/${{ github.repository }}:${{ github.event.number }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -49,7 +49,7 @@ jobs:
       - name: Build and Push nest-app Docker Image
         uses: docker/build-push-action@v7
         with:
-          context: ./nest-app
+          context: ./demo/nest-app
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ github.repository }}/nest-app:${{ github.event.number }}
