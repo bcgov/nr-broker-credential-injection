@@ -5,21 +5,21 @@ metadata:
   labels:
     app: {{ .Values.global.name }}
     purpose: {{ .Values.global.name }}
-spec:    
+spec:
   volumes:
     - name: shared-data
-      configMap: 
+      configMap:
         name: {{ .Values.global.name }}-intention-config
     - name: envconsul-config
       configMap:
         name: {{ .Values.global.name }}-envconsul-config
     - name: output
-      emptyDir: {}  
+      emptyDir: {}
   imagePullSecrets:
-  - name: vault-token-retrieve    
+  - name: vault-token-retrieve
   containers:
   - name: {{ .Values.global.name }}-nestapp
-    image: "{{ .Values.server.image.registry }}{{ .Values.server.image.context }}/nest-app:v{{ .Values.app.version }}"
+    image: "{{ .Values.server.image.registry }}{{ .Values.server.image.context }}/demo-nest-app:v{{ .Values.app.version }}"
     imagePullPolicy: Always
     volumeMounts:
       - name: output
@@ -30,22 +30,17 @@ spec:
     args: ['-c', 'envconsul -config /config/envconsul/env.hcl node dist/main']
   initContainers:
   - name: {{ .Values.global.name }}-init
-    image: "{{ .Values.server.image.registry }}{{ .Values.server.image.context }}/nr-broker-openshift-knox-retriever:v{{ .Values.app.version }}"
+    image: "{{ .Values.server.image.registry }}{{ .Values.server.image.context }}/intention-provision:v{{ .Values.app.version }}"
     imagePullPolicy: Always
     ports:
       - containerPort: 3600
     volumeMounts:
-      - name: shared-data        
+      - name: shared-data
         mountPath: /broker/config
       - name: output
         mountPath: /broker/output
     env:
-      - name: INTENTION_DATA
-        valueFrom:
-          configMapKeyRef:
-            name: {{ .Values.global.name }}-intention-config
-            key: "intention.json"
-      - name: ROLE_ID
+      - name: VAULT_ROLE_ID
         valueFrom:
           secretKeyRef:
             name: vault-secret
@@ -56,13 +51,7 @@ spec:
           secretKeyRef:
             name: vault-secret
             key: token
-      - name: EVENT_URL
+      - name: INTENTION_EVENT_URL
         value: "https://console.apps.silver.devops.gov.bc.ca/k8s/ns/c2053d-dev/pods/{{ .Values.global.name }}-init"
-    command:
-      - /bin/sh
-      - '-c'
-      - |
-        echo 'container starts!'
-        PROVISION_NAME=$(echo $INTENTION_DATA | jq -r '.actions[0].id')        
-        USER=$(echo $INTENTION_DATA | jq -r '.user.name')
-        ./get-vault-token.sh $BROKER_JWT $ROLE_ID $PROVISION_NAME $EVENT_URL $USER        
+      - name: INTENTION_ENVIRONMENT
+        value: "{{ .Values.global.environment }}"

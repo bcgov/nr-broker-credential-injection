@@ -2,11 +2,12 @@ global:
   name: "knox-retriever-demo"
   namespace: "c2053d"
   short-env: "dev"
+  environment: "development"
 
 server:
   image:
     registry: "artifacts.developer.gov.bc.ca/github-docker-remote/"
-    context: "bcgov/nr-broker-openshift-knox-retriever"
+    context: "bcgov/nr-broker-credential-injection"
   route:
     internal:
       enabled: true

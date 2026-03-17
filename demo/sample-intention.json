@@ -1,0 +1,22 @@
+{
+  "event": {
+    "provider": "provision-secret-demo",
+    "reason": "Job triggered",
+    "url": "JOB_URL"
+  },
+  "actions": [
+    {
+      "action": "package-provision",
+      "id": "provision",
+      "provision": ["approle/secret-id"],
+      "service": {
+        "name": "nodejs-sample",
+        "project": "nodejs-sample",
+        "environment": "development"
+      }
+    }
+  ],
+  "user": {
+    "name": "gruan@azureidir"
+  }
+}
