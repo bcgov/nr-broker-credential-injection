@@ -22,7 +22,7 @@ data:
 
     secret {
       no_prefix = true
-      path = "apps/dev/nodejs-sample/nodejs-sample/proxy-account-ready-only"
+      path = "apps/dev/oscar-example/nodejs-sample/proxy-account-ready-only"
     }
 
     exec {
