@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app: {{ .Values.global.name }}
+    helm.sh/chart: {{ .Values.global.name }}
+  name: {{ .Values.global.name }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ .Values.global.name }}
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            network.openshift.io/policy-group: ingress
+      ports:
+      - port: 3600
+        protocol: TCP
+  policyTypes:
+    - Ingress

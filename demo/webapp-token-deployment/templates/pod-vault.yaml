@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Values.global.name }}
+  labels:
+    app: {{ .Values.global.name }}
+    purpose: {{ .Values.global.name }}
+spec:
+  volumes:
+    - name: vault-agent-config
+      configMap:
+        name: {{ .Values.global.name }}-vault-agent-config
+    - name: approle-secret
+      secret:
+        secretName: {{ .Values.vault.secret }}
+        items:
+          - key: {{ .Values.vault.approle.roleKey }}
+            path: {{ .Values.vault.approle.roleKey }}
+          - key: {{ .Values.vault.approle.secretIdKey }}
+            path: {{ .Values.vault.approle.secretIdKey }}
+    - name: vault-secrets
+      emptyDir: {}
+  imagePullSecrets:
+  - name: vault-token-retrieve
+  containers:
+  - name: {{ .Values.global.name }}-nestapp
+    image: "{{ .Values.server.image.registry }}{{ .Values.server.image.context }}/demo-nest-app:v{{ .Values.app.version }}"
+    imagePullPolicy: Always
+    volumeMounts:
+      - name: vault-agent-config
+        mountPath: /config/vault-agent
+      - name: approle-secret
+        mountPath: /vault/approle
+        readOnly: true
+      - name: vault-secrets
+        mountPath: /vault/secrets
+    env:
+      - name: VAULT_ADDR
+        value: "{{ .Values.vault.addr }}"
+      - name: VAULT_SECRET_PATH
+        value: "{{ .Values.vault.secretPath }}"

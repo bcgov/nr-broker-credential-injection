@@ -1,7 +1,5 @@
 # Use a base image with Node.js installed
-FROM node:22 AS builder
-
-RUN npm i -g @nestjs/cli
+FROM node:24 AS builder
 
 # Set the working directory
 WORKDIR /app
@@ -10,46 +8,49 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install
+RUN npm ci
 
 COPY . ./
 
 RUN npm run build
 
 # Use a minimal base image for the production environment
-FROM node:22
+FROM node:24
 
 # Set the environment variable for Vault address
-ARG VAULT_ADDR="https://vault-iit.apps.silver.devops.gov.bc.ca"
+ARG VAULT_ADDR="https://knox.io.nrs.gov.bc.ca"
 ENV VAULT_ADDR=$VAULT_ADDR
-ARG ENVCONSUL_VERSION=0.13.1
+ARG VAULT_VERSION=1.18.5
 
-# Install envconsul to unwrap the token and fetch secrets from Vault during runtime
-ADD https://releases.hashicorp.com/envconsul/${ENVCONSUL_VERSION}/envconsul_${ENVCONSUL_VERSION}_linux_amd64.zip /tmp/envconsul.zip
-RUN unzip /tmp/envconsul.zip && \
-    rm /tmp/envconsul.zip && \
-    mv envconsul /usr/local/bin/
+RUN apt-get update && apt-get install -y --no-install-recommends jq curl unzip && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y jq curl
+# Install Vault CLI (used for vault agent auth and secret retrieval)
+ADD https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip /tmp/vault.zip
+RUN unzip /tmp/vault.zip && \
+    rm /tmp/vault.zip && \
+    mv vault /usr/local/bin/
 
 # Set the working directory
 WORKDIR /app
 
 
 # Copy the built application from the builder stage
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/env.hcl /config/envconsul/env.hcl
+COPY --from=builder /app/dist ./dist
+COPY ./docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 # Install production dependencies
-RUN npm install --only=prod
+RUN npm ci --omit=dev
 
-VOLUME /config/envconsul
-VOLUME /config/token
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+VOLUME /config/vault-agent
+VOLUME /vault/approle
+VOLUME /vault/secrets
 
 # Expose the desired port
 EXPOSE 3600
 
-# Set the entrypoint command to use envconsul and start the NestJS application
-ENTRYPOINT ["envconsul", "-f", "/config/envconsul/env.hcl", "node", "dist/main"]
+# Run Vault Agent login, fetch secrets, and start the NestJS application
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

@@ -1,0 +1,25 @@
+global:
+  name: "knox-retriever-demo"
+  namespace: "c2053d"
+  short-env: "dev"
+  environment: "development"
+
+server:
+  image:
+    registry: "artifacts.developer.gov.bc.ca/github-docker-remote/"
+    context: "bcgov/nr-broker-credential-injection"
+  route:
+    internal:
+      enabled: true
+      host: nestapp-test.apps.silver.devops.gov.bc.ca
+vault:
+  secret: "vault-secret"
+  addr: "https://knox.io.nrs.gov.bc.ca"
+  authPath: "auth/vs_apps_approle"
+  secretPath: "apps/dev/nodejs-sample/nodejs-sample/proxy-account-ready-only"
+  approle:
+    roleKey: "role"
+    secretIdKey: "secret_id"
+
+app:
+  version: "1.0.1"

@@ -6,12 +6,7 @@ The demo uses the `nodejs-sample` service registered in NR Broker. After deploym
 
 ## Images
 
-**initContainer** — retrieves a wrapped Vault token:
-```
-ghcr.io/bcgov/nr-broker-credential-injection/intention-provision:v2.0.0
-```
-
-**Application** — NestJS sample app with envconsul:
+**Application** — NestJS sample app with Vault Agent auth + Vault CLI:
 ```
 ghcr.io/bcgov/nr-broker-credential-injection/demo-nest-app:v2.0.0
 ```
@@ -44,9 +39,8 @@ helm uninstall knox-retriever-demo
 
 | Resource | Description |
 |---|---|
-| Pod | Single pod with initContainer + NestJS container |
-| ConfigMap (intention) | Intention JSON for NR Broker (`nodejs-sample` service) |
-| ConfigMap (envconsul) | envconsul HCL config pointing to the Vault secret path |
+| Pod | Single pod running NestJS container with Vault Agent authentication |
+| ConfigMap (vault agent) | Vault Agent HCL config for AppRole login and token sink |
 | Service | ClusterIP service on port 3600 |
 | Route | OpenShift route exposing the app externally |
 | NetworkPolicy | Allows ingress from the OpenShift router |

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ .Values.global.name }}
+    helm.sh/chart: {{ .Values.global.name }}
+  name: {{ .Values.global.name }}
+spec:
+  ports:
+    - name: 3600-tcp
+      protocol: TCP
+      port: 80
+      targetPort: 3600
+  selector:
+    app: {{ .Values.global.name }}

@@ -11,8 +11,8 @@ Pod startup
 ├── initContainer (get-vault-token.sh)
 │   ├── Opens an intention with NR Broker
 │   ├── Provisions an AppRole secret-id via NR Broker
-│   ├── Authenticates to Vault and obtains a wrapped token (5 min TTL)
-│   ├── Writes the wrapped token to a volume shared with container
+│   ├── Unwraps the returned secret-id with Vault
+│   ├── Creates or updates an OpenShift secret with the AppRole credentials
 │   └── Closes the intention
 │
 └── Application container (envconsul)
@@ -37,6 +37,10 @@ The initContainer runs `get-vault-token.sh`, which handles the full token provis
 | `INTENTION_ENVIRONMENT` | Pod spec | Target environment (`development`, `test`, `production`) |
 | `BROKER_URL` | Optional | NR Broker URL (default: `https://broker.io.nrs.gov.bc.ca`) |
 | `VAULT_ADDR` | Optional | Vault address (default: `https://knox.io.nrs.gov.bc.ca`) |
+| `OPENSHIFT_SECRET_NAME` | Optional | Secret to create or update with the AppRole credentials (default: `vault-secret`) |
+| `OPENSHIFT_TOKEN_KEY` | Optional | Key used for the Broker JWT in the OpenShift secret (default: `token`) |
+| `OPENSHIFT_ROLE_KEY` | Optional | Key used for the Vault Role ID in the OpenShift secret (default: `role`) |
+| `OPENSHIFT_SECRET_ID_KEY` | Optional | Key used for the provisioned Vault secret ID in the OpenShift secret (default: `secret_id`) |
 
 ## Integration Guide
 

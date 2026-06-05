@@ -1,0 +1,57 @@
+global:
+  name: "knox-retriever-cron"
+  environment: "development"
+
+image:
+  registry: "ghcr.io/"
+  repository: "bcgov/nr-broker-credential-injection/intention-provision"
+  tag: "v2.0.0"
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+schedule: "0 2 * * *"
+concurrencyPolicy: Forbid
+successfulJobsHistoryLimit: 3
+failedJobsHistoryLimit: 1
+backoffLimit: 1
+restartPolicy: OnFailure
+
+sourceSecret:
+  name: "vault-secret"
+  brokerTokenKey: "token"
+  vaultRoleIdKey: "role"
+
+targetSecret:
+  name: "vault-secret"
+  brokerTokenKey: "token"
+  vaultRoleIdKey: "role"
+  vaultSecretIdKey: "secret_id"
+
+intention:
+  event:
+    provider: "provision-secret-demo"
+    reason: "Scheduled secret refresh"
+    url: "https://console.apps.silver.devops.gov.bc.ca/"
+  action:
+    name: "package-provision"
+    id: "provision"
+    provision:
+      - "approle/secret-id"
+  service:
+    name: "nodejs-sample"
+    project: "nodejs-sample"
+    environment: "development"
+  user:
+    name: "gruan@azureidir"
+
+serviceAccount:
+  create: true
+  name: ""
+
+rbac:
+  create: true
+
+resources: {}
+
+podAnnotations: {}
+podLabels: {}

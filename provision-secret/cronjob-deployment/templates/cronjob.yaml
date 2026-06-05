@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "cronjob-deployment.fullname" . }}
+  labels:
+    {{- include "cronjob-deployment.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  concurrencyPolicy: {{ .Values.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.backoffLimit }}
+      template:
+        metadata:
+          labels:
+            {{- include "cronjob-deployment.selectorLabels" . | nindent 12 }}
+            {{- with .Values.podLabels }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.podAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        spec:
+          serviceAccountName: {{ include "cronjob-deployment.serviceAccountName" . }}
+          restartPolicy: {{ .Values.restartPolicy }}
+          {{- with .Values.image.pullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumes:
+            - name: intention-config
+              configMap:
+                name: {{ include "cronjob-deployment.fullname" . }}-intention
+          containers:
+            - name: {{ include "cronjob-deployment.name" . }}
+              image: "{{ .Values.image.registry }}{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              volumeMounts:
+                - name: intention-config
+                  mountPath: /broker/config
+              env:
+                - name: BROKER_JWT
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.sourceSecret.name }}
+                      key: {{ .Values.sourceSecret.brokerTokenKey }}
+                - name: VAULT_ROLE_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.sourceSecret.name }}
+                      key: {{ .Values.sourceSecret.vaultRoleIdKey }}
+                - name: INTENTION_EVENT_URL
+                  value: {{ .Values.intention.event.url | quote }}
+                - name: INTENTION_ENVIRONMENT
+                  value: {{ .Values.global.environment | quote }}
+                - name: OPENSHIFT_SECRET_NAME
+                  value: {{ .Values.targetSecret.name | quote }}
+                - name: OPENSHIFT_TOKEN_KEY
+                  value: {{ .Values.targetSecret.brokerTokenKey | quote }}
+                - name: OPENSHIFT_ROLE_KEY
+                  value: {{ .Values.targetSecret.vaultRoleIdKey | quote }}
+                - name: OPENSHIFT_SECRET_ID_KEY
+                  value: {{ .Values.targetSecret.vaultSecretIdKey | quote }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
