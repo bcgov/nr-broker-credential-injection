@@ -1,4 +1,4 @@
-{{- $intention := dict "event" (dict "provider" .Values.intention.event.provider "reason" .Values.intention.event.reason "url" .Values.intention.event.url) "actions" (list (dict "action" .Values.intention.action.name "id" .Values.intention.action.id "provision" .Values.intention.action.provision "service" (dict "name" .Values.intention.service.name "project" .Values.intention.service.project "environment" .Values.intention.service.environment))) "user" (dict "name" .Values.intention.user.name) -}}
+{{- $intention := dict "event" (dict "provider" .Values.intention.event.provider "reason" .Values.intention.event.reason "url" .Values.intention.event.url "transient" .Values.intention.event.transient) "actions" (list (dict "action" .Values.intention.action.name "id" .Values.intention.action.id "provision" .Values.intention.action.provision "service" (dict "name" .Values.intention.service.name "project" .Values.intention.service.project "environment" .Values.intention.service.environment))) "user" (dict "name" .Values.intention.user.name) -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:

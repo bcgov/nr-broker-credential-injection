@@ -1,20 +1,24 @@
 global:
-  name: "knox-retriever-cron"
-  environment: "development"
+  vaultAddress: "https://knox.io.nrs.gov.bc.ca"
+  brokerAddress: "https://broker.io.nrs.gov.bc.ca"
 
 image:
-  registry: "ghcr.io/"
-  repository: "bcgov/nr-broker-credential-injection/intention-provision"
-  tag: "v2.0.0"
+  registry: "artifacts.developer.gov.bc.ca/github-docker-remote/"
+  repository: "bcgov/nr-broker-credential-injection/intention-provision-secret"
+  tag: "12"
   pullPolicy: IfNotPresent
   pullSecrets: []
 
-schedule: "0 2 * * *"
-concurrencyPolicy: Forbid
-successfulJobsHistoryLimit: 3
-failedJobsHistoryLimit: 1
-backoffLimit: 1
-restartPolicy: OnFailure
+cron:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  backoffLimit: 1
+  restartPolicy: OnFailure
+  podAnnotations: {}
+  podLabels: {}
+  resources: {}
 
 sourceSecret:
   name: "vault-secret"
@@ -32,6 +36,7 @@ intention:
     provider: "provision-secret-demo"
     reason: "Scheduled secret refresh"
     url: "https://console.apps.silver.devops.gov.bc.ca/"
+    transient: true
   action:
     name: "package-provision"
     id: "provision"
@@ -42,7 +47,7 @@ intention:
     project: "nodejs-sample"
     environment: "development"
   user:
-    name: "gruan@azureidir"
+    name: ""
 
 serviceAccount:
   create: true
@@ -50,8 +55,3 @@ serviceAccount:
 
 rbac:
   create: true
-
-resources: {}
-
-podAnnotations: {}
-podLabels: {}

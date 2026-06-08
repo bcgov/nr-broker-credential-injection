@@ -6,19 +6,10 @@ Expand the name of the chart.
 {{- end }}
 
 {{/*
-Create a default fully qualified app name.
+Create a default fully qualified app name (just the release name).
 */}}
 {{- define "cronjob-deployment.fullname" -}}
-{{- if .Values.fullnameOverride }}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- $name := default .Chart.Name .Values.nameOverride }}
-{{- if contains $name .Release.Name }}
-{{- .Release.Name | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
-{{- end }}
-{{- end }}
+{{- default .Release.Name .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -52,9 +43,9 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Create the service account name to use.
 */}}
 {{- define "cronjob-deployment.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "cronjob-deployment.fullname" .) .Values.serviceAccount.name }}
+{{- if .Values.serviceAccount.name }}
+{{- .Values.serviceAccount.name | trunc 63 | trimSuffix "-" }}
 {{- else }}
-{{- default "default" .Values.serviceAccount.name }}
+{{- printf "%s-secret-patch" (include "cronjob-deployment.fullname" .) }}
 {{- end }}
 {{- end }}

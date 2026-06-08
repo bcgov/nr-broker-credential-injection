@@ -5,27 +5,27 @@ metadata:
   labels:
     {{- include "cronjob-deployment.labels" . | nindent 4 }}
 spec:
-  schedule: {{ .Values.schedule | quote }}
-  concurrencyPolicy: {{ .Values.concurrencyPolicy }}
-  successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}
-  failedJobsHistoryLimit: {{ .Values.failedJobsHistoryLimit }}
+  schedule: {{ .Values.cron.schedule | quote }}
+  concurrencyPolicy: {{ .Values.cron.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .Values.cron.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.cron.failedJobsHistoryLimit }}
   jobTemplate:
     spec:
-      backoffLimit: {{ .Values.backoffLimit }}
+      backoffLimit: {{ .Values.cron.backoffLimit }}
       template:
         metadata:
           labels:
             {{- include "cronjob-deployment.selectorLabels" . | nindent 12 }}
-            {{- with .Values.podLabels }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
-          {{- with .Values.podAnnotations }}
+            {{- with .Values.cron.podLabels }}
+             {{- toYaml . | nindent 12 }}
+             {{- end }}
+           {{- with .Values.cron.podAnnotations }}
           annotations:
             {{- toYaml . | nindent 12 }}
           {{- end }}
         spec:
           serviceAccountName: {{ include "cronjob-deployment.serviceAccountName" . }}
-          restartPolicy: {{ .Values.restartPolicy }}
+          restartPolicy: {{ .Values.cron.restartPolicy }}
           {{- with .Values.image.pullSecrets }}
           imagePullSecrets:
             {{- toYaml . | nindent 12 }}
@@ -42,6 +42,10 @@ spec:
                 - name: intention-config
                   mountPath: /broker/config
               env:
+                - name: VAULT_ADDR
+                  value: {{ .Values.global.vaultAddress | quote }}
+                - name: BROKER_ADDR
+                  value: {{ .Values.global.brokerAddress | quote }}
                 - name: BROKER_JWT
                   valueFrom:
                     secretKeyRef:
@@ -55,7 +59,7 @@ spec:
                 - name: INTENTION_EVENT_URL
                   value: {{ .Values.intention.event.url | quote }}
                 - name: INTENTION_ENVIRONMENT
-                  value: {{ .Values.global.environment | quote }}
+                  value: {{ .Values.intention.service.environment | quote }}
                 - name: OPENSHIFT_SECRET_NAME
                   value: {{ .Values.targetSecret.name | quote }}
                 - name: OPENSHIFT_TOKEN_KEY
@@ -65,4 +69,4 @@ spec:
                 - name: OPENSHIFT_SECRET_ID_KEY
                   value: {{ .Values.targetSecret.vaultSecretIdKey | quote }}
               resources:
-                {{- toYaml .Values.resources | nindent 16 }}
+                 {{- toYaml .Values.cron.resources | nindent 16 }}

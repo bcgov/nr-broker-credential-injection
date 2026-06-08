@@ -1,6 +1,6 @@
 apiVersion: v2
 name: cronjob-deployment
-description: Example Helm chart for running the NR Broker credential retriever once per day
+description: Helm chart for provisioning a NR Broker service with secrets
 type: application
 version: 0.1.0
 appVersion: "2.0.0"
