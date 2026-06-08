@@ -23,12 +23,12 @@ cron:
 sourceSecret:
   name: "vault-secret"
   brokerTokenKey: "token"
-  vaultRoleIdKey: "role"
+  vaultRoleIdKey: "role_id"
 
 targetSecret:
   name: "vault-secret"
   brokerTokenKey: "token"
-  vaultRoleIdKey: "role"
+  vaultRoleIdKey: "role_id"
   vaultSecretIdKey: "secret_id"
 
 intention:

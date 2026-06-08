@@ -12,7 +12,7 @@ This chart runs the `intention-provision` container once per day as a Kubernetes
 The default source and target secret is `vault-secret` with keys:
 
 - `token`: Broker JWT
-- `role`: Vault AppRole role ID
+- `role_id`: Vault AppRole role ID
 - `secret_id`: provisioned Vault AppRole secret ID
 
 ## Install
