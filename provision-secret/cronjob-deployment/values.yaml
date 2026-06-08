@@ -21,19 +21,19 @@ cron:
   resources: {}
 
 sourceSecret:
-  name: "vault-secret"
+  name: "knox-secret"
   brokerTokenKey: "token"
   vaultRoleIdKey: "role_id"
 
 targetSecret:
-  name: "vault-secret"
+  name: "knox-secret"
   brokerTokenKey: "token"
   vaultRoleIdKey: "role_id"
   vaultSecretIdKey: "secret_id"
 
 intention:
   event:
-    provider: "provision-secret-demo"
+    provider: "provision-secret-cronjob"
     reason: "Scheduled secret refresh"
     url: "https://console.apps.silver.devops.gov.bc.ca/"
     transient: true
