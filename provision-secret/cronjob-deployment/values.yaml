@@ -1,0 +1,57 @@
+global:
+  vaultAddress: "https://knox.io.nrs.gov.bc.ca"
+  brokerAddress: "https://broker.io.nrs.gov.bc.ca"
+
+image:
+  registry: "artifacts.developer.gov.bc.ca/github-docker-remote/"
+  repository: "bcgov/nr-broker-credential-injection/intention-provision-secret"
+  tag: "12"
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+cron:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  backoffLimit: 1
+  restartPolicy: OnFailure
+  podAnnotations: {}
+  podLabels: {}
+  resources: {}
+
+sourceSecret:
+  name: "knox-secret"
+  brokerTokenKey: "token"
+  vaultRoleIdKey: "role_id"
+
+targetSecret:
+  name: "knox-secret"
+  brokerTokenKey: "token"
+  vaultRoleIdKey: "role_id"
+  vaultSecretIdKey: "secret_id"
+
+intention:
+  event:
+    provider: "provision-secret-cronjob"
+    reason: "Scheduled secret refresh"
+    url: "https://console.apps.silver.devops.gov.bc.ca/"
+    transient: true
+  action:
+    name: "package-provision"
+    id: "provision"
+    provision:
+      - "approle/secret-id"
+  service:
+    name: "nodejs-sample"
+    project: "nodejs-sample"
+    environment: "development"
+  user:
+    name: ""
+
+serviceAccount:
+  create: true
+  name: ""
+
+rbac:
+  create: true

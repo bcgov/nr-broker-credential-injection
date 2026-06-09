@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cronjob-deployment
+description: Helm chart for provisioning a NR Broker service with secrets
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

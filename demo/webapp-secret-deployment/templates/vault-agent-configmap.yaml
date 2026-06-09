@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.global.name }}-vault-agent-config
+  labels:
+    helm.sh/chart: {{ .Values.global.name }}
+    app: {{ .Values.global.name }}
+data:
+  agent.hcl: |-
+    pid_file = "/tmp/vault-agent.pid"
+
+    vault {
+      address = "{{ .Values.vault.addr }}"
+      retry {
+        num_retries = 2
+      }
+    }
+
+    auto_auth {
+      method "approle" {
+        mount_path = "{{ .Values.vault.authPath }}"
+        config = {
+          role_id_file_path   = "/vault/approle/{{ .Values.vault.approle.roleKey }}"
+          secret_id_file_path = "/vault/approle/{{ .Values.vault.approle.secretIdKey }}"
+          remove_secret_id_file_after_reading = false
+        }
+      }
+
+      sink "file" {
+        config = {
+          path = "/vault/secrets/.vault-token"
+        }
+      }
+    }

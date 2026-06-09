@@ -33,13 +33,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push nr-broker-credential-injection Production Image
+      - name: Build and Push provision-token Production Image
         uses: docker/build-push-action@v7
         with:
-          context: ./
+          context: ./provision-token
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/intention-provision:${{ github.event.number }}
+            ${{ env.REGISTRY }}/${{ github.repository }}/intention-provision-token:${{ github.event.number }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BROKER_URL=${{ vars.BROKER_URL }}
+            VAULT_ADDR=${{ vars.VAULT_ADDR }}
+
+      - name: Build and Push provision-secret Production Image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./provision-secret
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}/intention-provision-secret:${{ github.event.number }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -57,4 +70,4 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             VAULT_ADDR=${{ vars.VAULT_ADDR }}
-            ENVCONSUL_VERSION=0.13.1
+            ENVCONSUL_VERSION=0.13.4
