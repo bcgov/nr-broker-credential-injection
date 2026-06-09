@@ -12,7 +12,7 @@ data:
     vault {
       address = "{{ .Values.vault.addr }}"
       retry {
-        num_retries = 5
+        num_retries = 2
       }
     }
 
@@ -22,6 +22,7 @@ data:
         config = {
           role_id_file_path   = "/vault/approle/{{ .Values.vault.approle.roleKey }}"
           secret_id_file_path = "/vault/approle/{{ .Values.vault.approle.secretIdKey }}"
+          remove_secret_id_file_after_reading = false
         }
       }
 

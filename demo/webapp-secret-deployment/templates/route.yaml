@@ -6,7 +6,7 @@ metadata:
     helm.sh/chart: {{ .Values.global.name }}
   name: {{ .Values.global.name }}
 spec:
-  host: {{ .Values.server.route.internal.host }}
+  host: {{ .Values.route.internal.host }}
   to:
     kind: Service
     name: {{ .Values.global.name }}
