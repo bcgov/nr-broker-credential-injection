@@ -11,7 +11,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -21,6 +23,7 @@ env:
   HELM_CHART_DIR: provision-secret/cronjob-deployment
   GH_PAGES_BRANCH: gh-pages
   CHART_NAME: cronjob-deployment
+  IGNORED_TAGS: "v1.0.0 v1.0.1 v2.0.0"
 
 jobs:
   publish-helm-chart:
@@ -52,6 +55,10 @@ jobs:
           cd ${{ env.HELM_CHART_DIR }}
           echo "${{ steps.tags.outputs.tags }}" | while read -r tag; do
             if [ -z "$tag" ]; then continue; fi
+            # Skip ignored tags
+            case "${{ env.IGNORED_TAGS }}" in
+              *"$tag"*) echo "Skipping ignored tag: $tag"; continue ;;
+            esac
             echo "=== Packaging $tag ==="
             (
               git checkout "$tag"
@@ -64,33 +71,48 @@ jobs:
           helm package --version 0.0.1-main .
           mv *.tgz ../../charts/
           echo "Packaged charts:"
-          ls -la charts/
+          ls -la ../../charts/
 
       - name: Generate index.yaml
         run: |
           cd charts
           helm repo index . \
             --url https://bcgov.github.io/nr-broker-credential-injection \
-            --merge index.yaml || true
+             --merge index.yaml || true
           cat index.yaml
 
-      - name: Checkout gh-pages branch
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ env.GH_PAGES_BRANCH }}
-          path: gh-pages
-          fetch-depth: 1
-
-      - name: Deploy to gh-pages
+      - name: Generate index.html
         run: |
-          cd gh-pages
-          git config user.name "GitHub Actions Bot"
-          git config user.email "actions@github.com"
-          rm -rf *
-          cp -r ../charts/* .
-          git add -A
-          git commit -m "Publish helm charts $(date +'%Y-%m-%d %H:%M')" || echo "No changes to commit"
-          git push -f origin gh-pages
+          cat > charts/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Helm Charts Repository</title>
+          </head>
+          <body>
+              <h1>Helm Charts Repository</h1>
+              <p>This is a Helm chart repository. Add with <code>helm repo add</code></p>
+              <ul>
+                <li><a href="index.yaml">index.yaml</a></li>
+              </ul>
+          </body>
+          </html>
+          EOF
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Docs
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Upload the charts folder
+          path: './charts'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
       - name: Chart Repository URL
         run: |
