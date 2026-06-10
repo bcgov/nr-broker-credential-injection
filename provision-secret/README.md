@@ -23,7 +23,7 @@ First, ensure you have the broker helm repo installed.
 helm repo add broker https://bcgov.github.io/nr-broker-credential-injection
 ```
 
-Next, create a values file with service and other environment specific settings.
+Next, create a values file with service and other environment specific settings. The user chosen must have the change role for the environment. If this user leaves your team or their access changes, you must update the value to a new user with the change role.
 
 ```yaml
 intention:
