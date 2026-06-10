@@ -17,8 +17,44 @@ The default source and target secret is `vault-secret` with keys:
 
 ## Install
 
+First, ensure you have the broker helm repo installed.
+
 ```bash
-helm install knox-provision ./cronjob-deployment
+helm repo add broker https://bcgov.github.io/nr-broker-credential-injection
+```
+
+Next, create a values file with service and other environment specific settings.
+
+```yaml
+intention:
+  service:
+    name: "nodejs-sample"
+    project: "oscar-example"
+    environment: "development"
+  user:
+    name: "mbystedt@azureidir"
+```
+
+If you are running in an environment that requires egress network policies you can add yaml like this to configure it. Please reach out for the cidr range.
+
+```yaml
+cron:
+  podLabels:
+    DataClass: Medium
+
+networkPolicy:
+  create: true
+  egress:
+    cidrs:
+      - x.x.x.x/32
+```
+
+Before installation, manually add a secret (default: knox-secret) with the keys 'token' (the service broker token) and 'role_id' (the environment's AppRole role id). The token and role id must never be shared or added to source control.
+
+Finally, install the cronjob.
+
+```bash
+helm install knox-provision broker/cronjob-deployment -f dev.yaml
 ```
 
 ## Customize
