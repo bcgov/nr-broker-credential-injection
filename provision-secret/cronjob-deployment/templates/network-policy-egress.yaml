@@ -1,0 +1,24 @@
+{{- if .Values.networkPolicy.create }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "cronjob-deployment.fullname" . }}-egress
+  labels:
+    {{- include "cronjob-deployment.labels" . | nindent 4 }}
+spec:
+  # Allow vault server connection
+  podSelector:
+    matchLabels:
+      {{- include "cronjob-deployment.selectorLabels" . | nindent 6 }}
+  egress:
+    {{- range .Values.networkPolicy.egress.cidrs }}
+    - ports:
+        - protocol: TCP
+          port: {{ $.Values.networkPolicy.egress.port }}
+      to:
+        - ipBlock:
+            cidr: {{ . }}
+    {{- end }}
+  policyTypes:
+    - Egress
+{{- end }}
