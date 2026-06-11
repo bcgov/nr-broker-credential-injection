@@ -2,12 +2,8 @@ name: Publish Helm Chart to GitHub Pages
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'provision-secret/cronjob-deployment/**'
-      - 'provision-secret/cronjob-deployment/Chart.yaml'
-      - 'provision-secret/cronjob-deployment/values.yaml'
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 permissions:
