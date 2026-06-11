@@ -1,8 +1,8 @@
 FROM docker.io/library/alpine:3.21
 RUN apk --no-cache add curl jq kubectl
-ARG BROKER_URL="https://broker.io.nrs.gov.bc.ca"
+ARG BROKER_ADDR="https://broker.io.nrs.gov.bc.ca"
 ARG VAULT_ADDR="https://knox.io.nrs.gov.bc.ca"
-ENV BROKER_URL=$BROKER_URL
+ENV BROKER_ADDR=$BROKER_ADDR
 ENV VAULT_ADDR=$VAULT_ADDR
 
 RUN adduser -D broker && mkdir /broker && chown broker:broker /broker
