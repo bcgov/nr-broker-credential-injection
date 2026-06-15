@@ -37,6 +37,7 @@ Selector labels.
 {{- define "cronjob-deployment.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "cronjob-deployment.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+app: {{ .Values.global.name }}
 {{- end }}
 
 {{/*

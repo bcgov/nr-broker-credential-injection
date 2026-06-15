@@ -62,8 +62,13 @@ cron:
 networkPolicy:
   create: true
   egress:
-    cidrs:
-      - x.x.x.x/32
+    - cidr: x.x.x.x/32
+      ports:
+        - protocol: TCP
+          port: 443
+    - podSelector:
+        matchLabels:
+          app: vault
 ```
 
 Before installation, manually add a secret (default: knox-secret) with the keys 'token' (the service broker token) and 'role_id' (the environment's AppRole role id). The token and role id must never be shared or added to source control. Users in Broker with service sudo access (lead developer) can access this data.

@@ -1,11 +1,12 @@
 global:
+  name: "knox-provision"
   vaultAddress: "https://knox.io.nrs.gov.bc.ca"
   brokerAddress: "https://broker.io.nrs.gov.bc.ca"
 
 image:
   registry: "artifacts.developer.gov.bc.ca/github-docker-remote/"
   repository: "bcgov/nr-broker-credential-injection/intention-provision-secret"
-  tag: "v3.0.1"
+  tag: "v3.0.2"
   pullPolicy: IfNotPresent
   pullSecrets: []
 
@@ -58,6 +59,11 @@ rbac:
 
 networkPolicy:
   create: false
-  egress:
-    cidrs: []
-    port: 443
+  # egress: A list of egress rules, each with `cidr` and optional `ports`.
+  # Example:
+  #   egress:
+  #     - cidr: 10.0.0.0/24
+  #       ports:
+  #         - protocol: TCP
+  #           port: 443
+  egress: []
