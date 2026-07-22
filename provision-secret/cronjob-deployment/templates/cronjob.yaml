@@ -68,5 +68,11 @@ spec:
                   value: {{ .Values.targetSecret.vaultRoleIdKey | quote }}
                 - name: OPENSHIFT_SECRET_ID_KEY
                   value: {{ .Values.targetSecret.vaultSecretIdKey | quote }}
+                - name: CREDENTIAL_SYNC_ENABLED
+                  value: {{ .Values.credentialSync.enabled | quote }}
+                - name: VAULT_SECRET_PATH
+                  value: {{ .Values.credentialSync.vaultPath | quote }}
+                - name: OPENSHIFT_SERVICE_SECRET_NAME
+                  value: {{ .Values.credentialSync.targetSecretName | quote }}
               resources:
                  {{- toYaml .Values.cron.resources | nindent 16 }}

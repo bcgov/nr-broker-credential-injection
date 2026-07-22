@@ -45,7 +45,7 @@ intention:
       - "approle/secret-id"
   service:
     name: "nodejs-sample"
-    project: "nodejs-sample"
+    project: "oscar-example"
     environment: "development"
   user:
     name: ""
@@ -67,3 +67,8 @@ networkPolicy:
   #         - protocol: TCP
   #           port: 443
   egress: []
+
+credentialSync:
+  enabled: true
+  vaultPath: "apps/data/dev/project/myservice/development"
+  targetSecretName: "myservice-dev-secret"

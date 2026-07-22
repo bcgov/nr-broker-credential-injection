@@ -138,6 +138,23 @@ Override values in `cronjob-deployment/values.yaml` to suit your environment. Th
 
 - `create` — Whether to create the Role and RoleBinding. Defaults to `true`.
 
+### `credentialSync`
+
+- `enabled` — When `true`, the script logs into Vault using AppRole (`role_id` and `secret_id`) and syncs a Vault path into an OpenShift secret.
+- `vaultPath` — Vault API path to read, for example `apps/data/dev/project/service/development` for KV.
+- `targetSecretName` — Name of the OpenShift secret that will store all key/value pairs from `vaultPath`.
+
+Example:
+
+```yaml
+credentialSync:
+  enabled: true
+  vaultPath: "apps/data/dev/project/service/development"
+  targetSecretName: "my-service-environment-secret"
+```
+
+The script always provisions a fresh `VAULT_SECRET_ID` from Broker on each run before syncing Vault data. This avoids failures from expired `secret_id` values.
+
 ## Uninstall
 
 ```bash
