@@ -17,17 +17,28 @@ cron:
   failedJobsHistoryLimit: 1
   backoffLimit: 1
   restartPolicy: OnFailure
+  activeDeadlineSeconds: 3600 # 1 hour maximum execution time
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
   podAnnotations: {}
   podLabels: {}
   resources: {}
 
 sourceSecret:
-  name: "knox-secret"
+  name: "service-approle-env-secret"
   brokerTokenKey: "token"
   vaultRoleIdKey: "role_id"
 
 targetSecret:
-  name: "knox-secret"
+  name: "service-approle-env-secret"
   brokerTokenKey: "token"
   vaultRoleIdKey: "role_id"
   vaultSecretIdKey: "secret_id"
@@ -68,7 +79,14 @@ networkPolicy:
   #           port: 443
   egress: []
 
+secretIdConfig:
+  vaultRoleName: "project_service_environment"
+  # The number of seconds to delay the destruction of the old secret_id after a new one is created.
+  # This is useful to avoid race conditions where the old secret_id is destroyed before the new one is used.
+  # Set to 0 to disable the delay.  
+  expireDelaySeconds: 10
+
 credentialSync:
   enabled: true
-  vaultPath: "apps/data/dev/project/myservice/development"
-  targetSecretName: "myservice-dev-secret"
+  vaultPath: "apps/data/env/project/service/fullenvironment"
+  targetSecretName: "service-env-secret"

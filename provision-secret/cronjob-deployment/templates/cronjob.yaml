@@ -25,7 +25,12 @@ spec:
           {{- end }}
         spec:
           serviceAccountName: {{ include "cronjob-deployment.serviceAccountName" . }}
+          activeDeadlineSeconds: {{ .Values.cron.activeDeadlineSeconds }} # 1 hour maximum execution time
           restartPolicy: {{ .Values.cron.restartPolicy }}
+          {{- with .Values.cron.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- with .Values.image.pullSecrets }}
           imagePullSecrets:
             {{- toYaml . | nindent 12 }}
@@ -38,6 +43,8 @@ spec:
             - name: {{ include "cronjob-deployment.name" . }}
               image: "{{ .Values.image.registry }}{{ .Values.image.repository }}:{{ .Values.image.tag }}"
               imagePullPolicy: {{ .Values.image.pullPolicy }}
+              securityContext:
+                {{- toYaml .Values.cron.securityContext | nindent 16 }}
               volumeMounts:
                 - name: intention-config
                   mountPath: /broker/config
@@ -56,6 +63,8 @@ spec:
                     secretKeyRef:
                       name: {{ .Values.sourceSecret.name }}
                       key: {{ .Values.sourceSecret.vaultRoleIdKey }}
+                - name: VAULT_ROLE_NAME
+                  value: {{ .Values.secretIdConfig.vaultRoleName | quote }}
                 - name: INTENTION_EVENT_URL
                   value: {{ .Values.intention.event.url | quote }}
                 - name: INTENTION_ENVIRONMENT
@@ -74,5 +83,7 @@ spec:
                   value: {{ .Values.credentialSync.vaultPath | quote }}
                 - name: OPENSHIFT_SERVICE_SECRET_NAME
                   value: {{ .Values.credentialSync.targetSecretName | quote }}
+                - name: VAULT_SECRET_ID_EXPIRE_DELAY_SECONDS
+                  value: {{ .Values.secretIdConfig.expireDelaySeconds | quote }}
               resources:
                  {{- toYaml .Values.cron.resources | nindent 16 }}

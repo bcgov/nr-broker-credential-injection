@@ -116,6 +116,12 @@ Override values in `cronjob-deployment/values.yaml` to suit your environment. Th
 - `vaultRoleIdKey` — Key for the Vault AppRole role ID in the target secret.
 - `vaultSecretIdKey` — Key for the provisioned Vault AppRole secret ID.
 
+### `secretIdConfig`
+- `vaultRoleName` — Optional Vault AppRole name used to destroy the previous Secret ID before rotation. Pattern with <project>_<service>_<environment>
+- `expireDelaySeconds` — The number of seconds to delay the destruction of the old secret_id after a new one is created. This is useful to avoid race conditions where the old secret_id is destroyed before the new one is used. Set to 0 to disable the delay.
+
+If `vaultRoleName` is set, the script preserves the previous value in `old_secret_id`, waits a few seconds, and then destroys the previous Secret ID in Vault before writing the new one.
+
 ### `intention`
 
 - `event.provider` — Event provider name.

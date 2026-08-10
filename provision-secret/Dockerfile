@@ -10,7 +10,6 @@ RUN adduser -D broker && mkdir /broker && chown broker:broker /broker
 COPY --chown=broker:broker ./src/get-vault-secret.sh /broker
 RUN chmod +x /broker/get-vault-secret.sh
 VOLUME /broker/config
-VOLUME /broker/output
 WORKDIR /broker
 USER broker
 ENTRYPOINT ["./get-vault-secret.sh"]
