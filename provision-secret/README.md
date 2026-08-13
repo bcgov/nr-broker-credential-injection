@@ -88,12 +88,27 @@ Override values in `cronjob-deployment/values.yaml` to suit your environment. Th
 - `schedule` — Cron expression for the job schedule. Defaults to `0 2 * * *` (02:00 daily). Set to `* * * * *` for a random time each day, or use a lookup to avoid rescheduling an existing job.
 - `concurrencyPolicy` — How to handle concurrent runs (`Allow`, `Forbid`, `Replace`). Defaults to `Forbid`.
 - `successfulJobsHistoryLimit` — Number of successful jobs to keep. Defaults to `3`.
+- `activeDeadlineSeconds` -  Maximum execution time. defaults to `3600` seconds
 - `failedJobsHistoryLimit` — Number of failed jobs to keep. Defaults to `1`.
 - `backoffLimit` — Backoff limit for the job. Defaults to `1`.
 - `restartPolicy` — Pod restart policy. Defaults to `OnFailure`.
 - `podAnnotations` — Annotations to add to the CronJob pod.
 - `podLabels` — Labels to add to the CronJob pod.
 - `resources` — Resource requests and limits for the container.
+- A block settings for pod and context security
+
+```yaml
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+```
 
 ### `image`
 
