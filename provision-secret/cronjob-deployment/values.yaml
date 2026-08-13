@@ -67,3 +67,37 @@ networkPolicy:
   #         - protocol: TCP
   #           port: 443
   egress: []
+# Secret Sync Configuration
+# Enables a Job that syncs Vault secrets to OpenShift secrets after the CronJob runs
+sync:
+  # Enable or disable the sync job
+  enabled: false
+
+  # Schedule for the sync job (cron expression)
+  # Set to empty string to run as a one-time Job (not CronJob)
+  # schedule: ""
+
+  # Vault secret paths to read (comma-separated)
+  # Example: "secret/data/app-config,secret/data/db-credentials"
+  vaultPaths: ""
+
+  # OpenShift secret names to create/update (comma-separated, must match vaultPaths count)
+  # Example: "app-config-secret,db-credentials-secret"
+  secretNames: ""
+
+  # Source secret containing AppRole credentials (for login)
+  sourceSecret:
+    name: "knox-secret"
+    vaultRoleIdKey: "role_id"
+    vaultSecretIdKey: "secret_id"
+
+  # Sync job configuration
+  job:
+    concurrencyPolicy: Forbid
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 1
+    backoffLimit: 4
+    restartPolicy: OnFailure
+    podAnnotations: {}
+    podLabels: {}
+    resources: {}

@@ -138,6 +138,52 @@ Override values in `cronjob-deployment/values.yaml` to suit your environment. Th
 
 - `create` — Whether to create the Role and RoleBinding. Defaults to `true`.
 
+### `sync`
+
+Enable optional secret synchronization after the pre-provision cron job runs. This allows you to sync Vault secrets to OpenShift secrets without modifying your deployment or application.
+
+- `enabled` — Enable or disable the sync job. Defaults to `false`.
+- `schedule` — Cron expression for the sync job. Set to empty string (`""`) to run as a one-time Job instead of a CronJob.
+- `vaultPaths` — Comma-separated list of Vault secret paths to read (e.g., `"secret/data/app-config,secret/data/db-credentials"`).
+- `secretNames` — Comma-separated list of OpenShift secret names to create/update (must match the count of `vaultPaths`).
+- `sourceSecret.name` — Name of the secret containing AppRole credentials for Vault login. Defaults to `knox-secret`.
+- `sourceSecret.vaultRoleIdKey` — Key in the source secret for the Vault AppRole role ID. Defaults to `role_id`.
+- `sourceSecret.vaultSecretIdKey` — Key in the source secret for the Vault AppRole secret ID. Defaults to `secret_id`.
+- `job.concurrencyPolicy` — How to handle concurrent sync runs. Defaults to `Forbid`.
+- `job.successfulJobsHistoryLimit` — Number of successful sync jobs to keep. Defaults to `3`.
+- `job.failedJobsHistoryLimit` — Number of failed sync jobs to keep. Defaults to `1`.
+- `job.backoffLimit` — Backoff limit for the sync job. Defaults to `4`.
+- `job.restartPolicy` — Pod restart policy. Defaults to `OnFailure`.
+- `job.podAnnotations` — Annotations to add to the sync job pod.
+- `job.podLabels` — Labels to add to the sync job pod.
+- `job.resources` — Resource requests and limits for the sync container.
+
+#### Example: Enable sync with a scheduled CronJob
+
+```yaml
+sync:
+  enabled: true
+  schedule: "0 3 * * *"  # Run daily at 03:00, after the provision cron at 02:00
+  vaultPaths: "secret/data/myapp/config,secret/data/myapp/db"
+  secretNames: "myapp-config-secret,myapp-db-secret"
+  sourceSecret:
+    name: "knox-secret"
+    vaultRoleIdKey: "role_id"
+    vaultSecretIdKey: "secret_id"
+```
+
+#### Example: Enable sync as a one-time Job
+
+```yaml
+sync:
+  enabled: true
+  schedule: ""  # Empty string creates a one-time Job instead of CronJob
+  vaultPaths: "secret/data/myapp/config"
+  secretNames: "myapp-config-secret"
+```
+
+> **NOTICE:** This job must be run before changes are reflected in OpenShift. For applications requiring dynamic secrets, Vault should be connected to during runtime. Consider using the Vault Agent Sidecar Injector for dynamic secret rotation.
+
 ## Uninstall
 
 ```bash
