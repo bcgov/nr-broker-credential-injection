@@ -1,5 +1,5 @@
 FROM docker.io/library/alpine:3.21
-RUN apk --no-cache add curl jq kubectl
+RUN apk --no-cache add bash curl jq kubectl
 ARG BROKER_ADDR="https://broker.io.nrs.gov.bc.ca"
 ARG VAULT_ADDR="https://knox.io.nrs.gov.bc.ca"
 ENV BROKER_ADDR=$BROKER_ADDR
