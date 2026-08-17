@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # Knox Secret Sync - Sync Vault secrets to OpenShift secrets
 # This script logs into Vault using AppRole credentials and syncs
@@ -14,8 +14,9 @@ SECRET_SOURCE_NAME="${SECRET_SOURCE_NAME:-knox-secret}"
 # SYNC_VAULT_PATHS is a comma-separated list of Vault secret paths to read
 # SYNC_SECRET_NAMES is a comma-separated list of OpenShift secret names to create/update
 # SYNC_SECRET_KEYS is a comma-separated list of keys within each secret
-: "${SYNC_VAULT_PATHS:?SYNC_VAULT_PATHS is required - comma-separated Vault secret paths (e.g., 'secret/data/app,secret/data/db')"}
-: "${SYNC_SECRET_NAMES:?SYNC_SECRET_NAMES is required - comma-separated OpenShift secret names to create/update"}
+# SYNC_VAULT_PATHS is required - comma-separated Vault secret paths (e.g., 'secret/data/app,secret/data/db')
+: "${SYNC_VAULT_PATHS:?SYNC_VAULT_PATHS is required - comma-separated Vault secret paths}"
+: "${SYNC_SECRET_NAMES:?SYNC_SECRET_NAMES is required - comma-separated OpenShift secret names to create/update}"
 
 echo "=== Knox Secret Sync ==="
 echo "Vault Address: $VAULT_ADDR"
@@ -25,8 +26,8 @@ echo "Target Secrets: $SYNC_SECRET_NAMES"
 
 # Read AppRole credentials from source secret
 echo "Reading AppRole credentials from OpenShift secret $SECRET_SOURCE_NAME"
-VAULT_ROLE_ID=$(kubectl get secret "$SECRET_SOURCE_NAME" -o jsonpath="{.data[$VAULT_ROLE_ID_KEY]}" | base64 -d)
-VAULT_SECRET_ID=$(kubectl get secret "$SECRET_SOURCE_NAME" -o jsonpath="{.data[$VAULT_SECRET_ID_KEY]}" | base64 -d)
+VAULT_ROLE_ID=$(kubectl get secret "$SECRET_SOURCE_NAME" -o jsonpath="{.data['$VAULT_ROLE_ID_KEY']}" | base64 -d)
+VAULT_SECRET_ID=$(kubectl get secret "$SECRET_SOURCE_NAME" -o jsonpath="{.data['$VAULT_SECRET_ID_KEY']}" | base64 -d)
 
 if [ -z "$VAULT_ROLE_ID" ] || [ -z "$VAULT_SECRET_ID" ]; then
     echo "ERROR: Failed to read AppRole credentials from secret $SECRET_SOURCE_NAME"
@@ -34,7 +35,7 @@ if [ -z "$VAULT_ROLE_ID" ] || [ -z "$VAULT_SECRET_ID" ]; then
 fi
 
 echo "Logging into Vault using AppRole"
-LOGIN_RESPONSE=$(curl -s -X POST "$VAULT_ADDR/v1/auth/approle/login" \
+LOGIN_RESPONSE=$(curl -s -X POST "$VAULT_ADDR/v1/auth/vs_apps_approle/login" \
     -H 'Content-Type: application/json' \
     -d "$(jq -n --arg role_id "$VAULT_ROLE_ID" --arg secret_id "$VAULT_SECRET_ID" \
         '{"role_id": $role_id, "secret_id": $secret_id}')")
@@ -78,35 +79,21 @@ for i in "${!VAULT_PATHS[@]}"; do
         echo "$VAULT_SECRET_DATA" | jq '.'
         continue
     fi
+    SECRET_MAP=$(echo "$VAULT_SECRET_DATA" | jq '.data.data // .data // empty')
 
-    # Extract the data - handle both kv-v1 and kv-v2 secret engines
-    # kv-v2 stores data in .data.data, kv-v1 stores directly in .data
-    if [ "$(echo "$VAULT_SECRET_DATA" | jq '.data.data // empty')" != "" ]; then
-        # kv-v2 secret engine
-        SECRET_DATA=$(echo "$VAULT_SECRET_DATA" | jq -r '.data.data | to_entries[] | "\(.key)=\(.value)"')
-    else
-        # kv-v1 secret engine
-        SECRET_DATA=$(echo "$VAULT_SECRET_DATA" | jq -r '.data | to_entries[] | "\(.key)=\(.value)"')
-    fi
-
-    if [ -z "$SECRET_DATA" ]; then
+    if [ -z "$SECRET_MAP" ] || [ "$SECRET_MAP" = "null" ]; then
         echo "WARNING: No data found in Vault path '$VAULT_PATH'"
         continue
     fi
 
-    # Build kubectl create secret command with all key-value pairs
-    KUBECTL_CMD="kubectl create secret generic $SECRET_NAME"
-    while IFS= read -r line; do
-        KEY=$(echo "$line" | cut -d'=' -f1)
-        VALUE=$(echo "$line" | cut -d'=' -f2-)
-        KUBECTL_CMD="$KUBECTL_CMD --from-literal=$KEY=$VALUE"
-    done <<< "$SECRET_DATA"
-
-    # Add dry-run and apply
-    KUBECTL_CMD="$KUBECTL_CMD --dry-run=client -o yaml | kubectl apply -f -"
-
     echo "Creating/updating OpenShift secret '$SECRET_NAME'"
-    eval "$KUBECTL_CMD"
+    jq -n --arg name "$SECRET_NAME" --argjson data "$SECRET_MAP" '{
+      apiVersion: "v1",
+      kind: "Secret",
+      metadata: { name: $name },
+      type: "Opaque",
+      stringData: $data
+    }' | kubectl apply -f -
 
     if [ $? -eq 0 ]; then
         echo "SUCCESS: OpenShift secret '$SECRET_NAME' created/updated"
