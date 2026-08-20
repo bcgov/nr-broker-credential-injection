@@ -1,0 +1,33 @@
+global:
+  name: "knox-tools-sync"
+
+# Service account that NR Broker uses to authenticate to the Kubernetes API
+# when syncing tools (CI/CD) secrets into this project. The service account
+# token that Broker reads is produced from this service account.
+serviceAccount:
+  # Create the ServiceAccount.
+  create: true
+  # Name of the service account that Broker authenticates as.
+  name: "nr-broker-sync"
+  annotations: {}
+
+# Role and RoleBinding that grant the service account permission to manage
+# secrets in the project. This is the access Broker needs to create/update the
+# synced secrets.
+rbac:
+  create: true
+  # Kubernetes Secret verbs the role is granted.
+  verbs:
+    - get
+    - create
+    - update
+    - patch
+
+# NR Broker instead reads a long-lived
+# token from a Secret that it creates for the service account. This token is
+# what you paste as `serviceAccountToken` in the Vault `nr-broker-sync`
+# configuration.
+token:
+  create: true
+  # Name of the Secret holding the long-lived service account token.
+  name: "nr-broker-sync-token"
