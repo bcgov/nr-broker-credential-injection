@@ -1,0 +1,35 @@
+{{- if .Values.serviceAccount.create }}
+NR Broker tools-secret sync access has been created.
+
+  ServiceAccount: {{ include "knox-tools-sync.serviceAccountName" . }}
+{{- end }}
+{{- if .Values.rbac.create }}
+  Role/RoleBinding: {{ include "knox-tools-sync.fullname" . }} (secrets: {{ join ", " .Values.rbac.verbs }})
+{{- end }}
+{{- if and .Values.token.create .Values.serviceAccount.create }}
+
+A long-lived service account token has been created in the Secret:
+  {{ include "knox-tools-sync.tokenSecretName" . }}
+
+Next steps:
+  1. Retrieve the token:
+    oc get secret {{ include "knox-tools-sync.tokenSecretName" . }} -o jsonpath='{.data.token}' | base64 --decode
+
+  2. Retrieve the CA certificate (only needed for clusters with a self-signed
+     cert, such as minikube):
+    oc get secret {{ include "knox-tools-sync.tokenSecretName" . }} -o jsonpath='{.data.ca\.crt}'
+
+  3. Configure the sync in Vault at clouds/<cloud-name>/<project-name>/nr-broker-sync,
+     setting serviceAccountToken to the value from step 1:
+
+    vault kv put clouds/<cloud-name>/<project-name>/nr-broker-sync \
+        serviceAccountToken="<token>" \
+        caData="<ca-data>" \
+        secrets='[{"service": "<service-name>", "destinationSecretName": "<secret-name>"}]'
+
+  4. In the NR Broker UI, ensure the service has a `deploys` edge to this OpenShift
+     project (or its parent cloud). This is a restricted edge and may need to be
+     explicitly enabled for viewing.
+
+See the NR Broker Kubernetes sync reference for details.
+{{- end }}

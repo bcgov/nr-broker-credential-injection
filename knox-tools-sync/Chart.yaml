@@ -1,0 +1,6 @@
+apiVersion: v2
+name: knox-tools-sync
+description: Helm chart that creates the Kubernetes service account and RBAC NR Broker needs to sync tools (CI/CD) secrets into an OpenShift project
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

@@ -16,9 +16,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  HELM_CHART_DIR: provision-secret/cronjob-deployment
+  # Space-separated list of chart directories to package and publish.
+  # Each path is relative to the repository root.
+  HELM_CHARTS: "provision-secret/cronjob-deployment knox-tools-sync"
   GH_PAGES_BRANCH: gh-pages
-  CHART_NAME: cronjob-deployment
   IGNORED_TAGS: "v1.0.0 v1.0.1 v2.0.0"
 
 jobs:
@@ -47,8 +48,8 @@ jobs:
 
       - name: Package all versions
         run: |
-          mkdir -p charts
-          cd ${{ env.HELM_CHART_DIR }}
+          mkdir -p "${GITHUB_WORKSPACE}/charts"
+          charts="${{ env.HELM_CHARTS }}"
           echo "${{ steps.tags.outputs.tags }}" | while read -r tag; do
             if [ -z "$tag" ]; then continue; fi
             # Skip ignored tags
@@ -56,18 +57,30 @@ jobs:
               *"$tag"*) echo "Skipping ignored tag: $tag"; continue ;;
             esac
             echo "=== Packaging $tag ==="
-            (
-              git checkout "$tag"
-              helm package --version "${tag#v}" .
-              mv *.tgz ../../charts/
-            )
+            git checkout "$tag"
+            for dir in $charts; do
+              if [ -f "$dir/Chart.yaml" ]; then
+                (
+                  cd "$dir"
+                  helm package --version "${tag#v}" .
+                  mv *.tgz "${GITHUB_WORKSPACE}/charts/"
+                )
+              else
+                echo "Chart $dir not present in $tag; skipping"
+              fi
+            done
           done
           echo "=== Packaging main ==="
           git checkout main
-          helm package --version 0.0.1-main .
-          mv *.tgz ../../charts/
+          for dir in $charts; do
+            (
+              cd "$dir"
+              helm package --version 0.0.1-main .
+              mv *.tgz "${GITHUB_WORKSPACE}/charts/"
+            )
+          done
           echo "Packaged charts:"
-          ls -la ../../charts/
+          ls -la "${GITHUB_WORKSPACE}/charts/"
 
       - name: Generate index.yaml
         run: |
