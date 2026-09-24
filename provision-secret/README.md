@@ -1,46 +1,78 @@
-# NR Broker Pre-provisioning Secret Pattern
+# NR Broker Pre-provisioning OpenShift Secret Pattern
 
-This pattern allows pods to be stopped and started as required with minimal setup. The service deployment needs to use a secret with the AppRole login values (role id and secret id) to access service credentials. The secret is pre-provisioned by an OpenShift cron job that is installed in the same namespace as the pods. The job is installed using a provided helm chart and rotates the secret automatically.
+Install this Helm chart when your OpenShift service needs credentials from [Knox Vault](https://apps.nrs.gov.bc.ca/int/confluence/x/gib7B) and should be able to restart, scale, or recover without manual secret renewal. It automates the credential setup needed for your pods to access Vault.
 
 ## Prerequisites
 
 - Access to an OpenShift namespace
 - Helm 3 installed
+- AppRole configured for this pattern
 - A source secret containing the Broker JWT and Vault role ID
-
-The default source and target secret is `knox-secret` with keys:
-
-- `token`: Broker JWT
-- `role_id`: Vault AppRole role ID
-- `secret_id`: provisioned Vault AppRole secret ID
 
 ## AppRole Setup
 
-The AppRole needs to be setup specifically for this pattern to work. The first two are required. The CIDR restriction is recommended.
+Vault AppRole is an authentication method designed for applications and automation. It uses a stable `role_id` to identify the application and a renewable or expiring `secret_id` to prove that the application is allowed to log in. This chart runs an OpenShift CronJob that uses [NR Broker](https://apps.nrs.gov.bc.ca/int/confluence/x/pS3FBw) to provision the `secret_id`, then stores it with the `role_id` so pods can authenticate to [Knox Vault](https://apps.nrs.gov.bc.ca/int/confluence/x/gib7B) without a developer managing credentials manually. The scheduled refresh keeps the credentials available over time.
+
+Confirm that the AppRole's Secret ID TTL and usage limit support the number of pods and CronJob schedule you intend to use. The CIDR login restriction is recommended as an additional security control. If you do not have access to change this configuration, contact the team that manages Knox Vault.
 
 ### Secret ID TTL
 
-The secret id ttl (time to live) needs to be longer than the CronJob period. If you plan on running the CronJob daily (the default) then you should request the ttl to be longer than 24 hours. To prevent outages, you may want to request that the TTL be even a couple days so that the CronJob failing doesn't immediately impact the ability for pods to start.
+The Secret ID TTL (time to live) needs to be longer than the CronJob period. If you plan to run the CronJob daily (the default), request a TTL longer than 24 hours. To prevent outages, consider requesting a TTL of a couple of days so that a failed CronJob does not immediately prevent pods from starting.
 
 ### Secret ID Usage
 
-The secret id usages needs to be set to 0 (infinite) or some other reasonable number. The default number of usages is 1 which will prevent more than 1 pod starting per provisioning.
+The Secret ID usage limit needs to be set to 0 (unlimited) or another reasonable number. The default usage limit is 1, which prevents more than one pod from starting per provisioning.
 
 ### Login CIDR Restriction
 
-The per-environment AppRole login can be configured to only allow logins from an IP range (CIDR). This ensures that, even though the provisioned login credentials can be used multiple times, the logins are limited to an expected range. This range can be updated anytime without needing to re-provision a new secret id.
+The per-environment AppRole login can be configured to allow logins only from an IP range (CIDR). This ensures that, even though the provisioned login credentials can be used multiple times, logins are limited to an expected range. This range can be updated at any time without needing to provision a new Secret ID.
 
-Ideally, the configured CIDR will be unique to the service and environment. You will want to ensure your hosting option can provide this. In any case, this restriction isn't foolproof and other methods like audit log monitoring should be used to identify and investigate unusual logins.
+Ideally, the configured CIDR should be unique to the service and environment. Ensure that your hosting platform can provide this. In any case, this restriction is not foolproof; use other methods, such as audit log monitoring, to identify and investigate unusual logins.
 
-## Install
+## Source Secret Setup
 
-This repository uses GitHub Pages to distribute the helm chart. First, ensure you have the helm repo installed.
+Before installation, manually add a secret (default: `knox-secret`) with the keys `token` (the service Broker token) and `role_id` (the environment's AppRole role ID). Never share the token or role ID or add them to source control.
+
+Summary of the `knox-secret` keys:
+
+- `token`: Broker JWT
+- `role_id`: Vault AppRole role ID
+
+Users in Broker with service sudo access (lead developer) can access this data.
+
+NR Broker also offers a method to synchronize tool secrets, including the Broker JWT, Vault role ID, and other tool secrets stored in Knox Vault. See the [NR Broker tool secret synchronization documentation](https://bcgov.github.io/nr-broker/#/operations_kubernetes_sync) for more information.
+
+## Configure
+
+Next, create a configuration for the Helm deployment. We recommend using the NR Composer generator `ocp-knox-provision`, which walks you through the process with prompts and outputs documentation to assist with operational tasks.
+
+See: https://bcgov.github.io/nr-repository-composer/#/using/generators/ocp-knox-provision
+
+If you want to set up the values file manually or need more details about configuring the CronJob, continue to 'Configuration Details' and then return to the installation instructions.
+
+# Install
+
+This repository uses GitHub Pages to distribute the Helm chart. First, ensure that you have the Helm repository configured.
 
 ```bash
 helm repo add broker https://bcgov.github.io/nr-broker-credential-injection
 ```
 
-Next, create a values file with service and other environment specific settings. The configured user must have the change role for the environment for the service in NR Broker. If this user leaves your team or their access changes, you must update the value to a new user with the change role.
+Finally, install the CronJob.
+
+```bash
+helm install knox-provision broker/cronjob-deployment -f dev.yaml
+```
+
+## Uninstall
+
+```bash
+helm uninstall knox-provision
+```
+
+## Configuration Details
+
+The values file defines your service and other environment-specific settings. The configured user must have the change role for the service's environment in NR Broker. If this user leaves your team or their access changes, update the value to a new user with the change role.
 
 ```yaml
 intention:
@@ -71,17 +103,15 @@ networkPolicy:
           app: vault
 ```
 
-Before installation, manually add a secret (default: knox-secret) with the keys 'token' (the service broker token) and 'role_id' (the environment's AppRole role id). The token and role id must never be shared or added to source control. Users in Broker with service sudo access (lead developer) can access this data.
-
-Finally, install the cronjob.
-
-```bash
-helm install knox-provision broker/cronjob-deployment -f dev.yaml
-```
-
 ## Customize
 
 Override values in `cronjob-deployment/values.yaml` to suit your environment. The chart is organized into the following sections:
+
+### `global`
+
+- `name` — Release name. Defaults to `knox-provision`.
+- `vaultAddress` — Knox Vault address. Defaults to `https://knox.io.nrs.gov.bc.ca`.
+- `brokerAddress` — NR Broker address. Defaults to `https://broker.io.nrs.gov.bc.ca`.
 
 ### `cron`
 
@@ -91,61 +121,69 @@ Override values in `cronjob-deployment/values.yaml` to suit your environment. Th
 - `failedJobsHistoryLimit` — Number of failed jobs to keep. Defaults to `1`.
 - `backoffLimit` — Backoff limit for the job. Defaults to `1`.
 - `restartPolicy` — Pod restart policy. Defaults to `OnFailure`.
-- `podAnnotations` — Annotations to add to the CronJob pod.
-- `podLabels` — Labels to add to the CronJob pod.
-- `resources` — Resource requests and limits for the container.
+- `podAnnotations` — Annotations to add to the CronJob pod. Defaults to `{}`.
+- `podLabels` — Labels to add to the CronJob pod. Defaults to `{}`.
+- `resources` — Resource requests and limits for the container. Defaults to `{}`.
 
 ### `image`
 
-- `registry` — Container image registry.
-- `repository` — Container image repository.
-- `tag` — Container image tag.
+- `registry` — Container image registry. Defaults to `artifacts.developer.gov.bc.ca/github-docker-remote/`.
+- `repository` — Container image repository. Defaults to `bcgov/nr-broker-credential-injection/intention-provision-secret`.
+- `tag` — Container image tag. Defaults to `v3.0.2`.
 - `pullPolicy` — Image pull policy. Defaults to `IfNotPresent`.
-- `pullSecrets` — Image pull secrets for private registries.
+- `pullSecrets` — Image pull secrets for private registries. Defaults to `[]`.
 
 ### `sourceSecret`
 
-- `name` — Name of the secret containing the Broker JWT and Vault role ID.
-- `brokerTokenKey` — Key for the Broker JWT.
-- `vaultRoleIdKey` — Key for the Vault AppRole role ID.
+- `name` — Name of the secret containing the Broker JWT and Vault role ID. Defaults to `knox-secret`.
+- `brokerTokenKey` — Key for the Broker JWT. Defaults to `token`.
+- `vaultRoleIdKey` — Key for the Vault AppRole role ID. Defaults to `role_id`.
 
 ### `targetSecret`
 
-- `name` — Name of the secret to store the provisioned Vault AppRole `secret_id`.
-- `brokerTokenKey` — Key for the Broker JWT in the target secret.
-- `vaultRoleIdKey` — Key for the Vault AppRole role ID in the target secret.
-- `vaultSecretIdKey` — Key for the provisioned Vault AppRole secret ID.
+- `name` — Name of the secret to store the provisioned Vault AppRole `secret_id`. Defaults to `knox-secret`. **This must not match the source name if using [NR Broker's secret synchronization](https://bcgov.github.io/nr-broker/#/operations_kubernetes_sync)**
+- `brokerTokenKey` — Key for the Broker JWT in the target secret. Defaults to `token`.
+- `vaultRoleIdKey` — Key for the Vault AppRole role ID in the target secret. Defaults to `role_id`.
+- `vaultSecretIdKey` — Key for the provisioned Vault AppRole secret ID. Defaults to `secret_id`.
 
 ### `intention`
 
-- `event.provider` — Event provider name.
-- `event.reason` — Event reason description.
-- `event.url` — Event URL.
-- `action.name` — Action name.
-- `action.id` — Action ID.
-- `action.provision` — List of provision actions.
-- `service.name` — Service name.
-- `service.project` — Service project.
-- `service.environment` — Service environment.
-- `user.name` — User name.
+- `event.provider` — Event provider name. Defaults to `provision-secret-cronjob`.
+- `event.reason` — Event reason description. Defaults to `Scheduled secret refresh`.
+- `event.url` — Event URL. Defaults to `https://console.apps.silver.devops.gov.bc.ca/`.
+- `event.transient` — Whether the event is transient. Defaults to `true`.
+- `action.name` — Action name. Defaults to `package-provision`.
+- `action.id` — Action ID. Defaults to `provision`.
+- `action.provision` — List of provision actions. Defaults to a single `approle/secret-id` action.
+- `service.name` — Service name. Defaults to `nodejs-sample`.
+- `service.project` — Service project. Defaults to `nodejs-sample`.
+- `service.environment` — Service environment. Defaults to `development`.
+- `user.name` — User name. Defaults to an empty value and must be configured for the target service.
 
 ### `serviceAccount`
 
 - `create` — Whether to create the ServiceAccount. Defaults to `true`.
-- `name` — Custom service account name. If empty, defaults to `<release>-secret-patch`.
+- `name` — Custom service account name. Defaults to an empty value, which uses `<release>-secret-patch`.
 
 ### `rbac`
 
 - `create` — Whether to create the Role and RoleBinding. Defaults to `true`.
 
+### `networkPolicy`
+
+- `create` — Whether to create the egress NetworkPolicy. Defaults to `false`.
+- `egress` — Egress rules for the CronJob pod. Defaults to `[]`.
+
 ### `sync`
 
-Enable optional secret synchronization after the pre-provision cron job runs. This allows you to sync Vault secrets to OpenShift secrets without modifying your deployment or application.
+Enable optional secret synchronization after the pre-provision CronJob runs. This feature copies selected Vault secrets into OpenShift Secrets for applications that cannot be modified to log in with an AppRole and retrieve secrets through the Vault API, including COTS applications. It is also useful as an onboarding accelerator when a team needs to get a service running with a simpler deployment before adding direct Vault integration.
+
+Treat this as a compatibility or transitional option rather than the preferred long-term integration. When practical, update the application to use Vault directly through a Vault CLI sidecar or an internal Vault client library, and then disable secret synchronization so secrets are not copied into OpenShift.
 
 - `enabled` — Enable or disable the sync job. Defaults to `false`.
-- `schedule` — Cron expression for the sync job. Set to empty string (`""`) to run as a one-time Job instead of a CronJob.
-- `vaultPaths` — Comma-separated list of Vault secret paths to read (e.g., `"secret/data/app-config,secret/data/db-credentials"`).
-- `secretNames` — Comma-separated list of OpenShift secret names to create/update (must match the count of `vaultPaths`).
+- `schedule` — Cron expression for the sync job. Defaults to an empty value, which creates a one-time Job instead of a CronJob.
+- `vaultPaths` — Comma-separated list of Vault secret paths to read (e.g., `"secret/data/app-config,secret/data/db-credentials"`). Defaults to an empty value.
+- `secretNames` — Comma-separated list of OpenShift secret names to create/update (must match the count of `vaultPaths`). Defaults to an empty value.
 - `sourceSecret.name` — Name of the secret containing AppRole credentials for Vault login. Defaults to `knox-secret`.
 - `sourceSecret.vaultRoleIdKey` — Key in the source secret for the Vault AppRole role ID. Defaults to `role_id`.
 - `sourceSecret.vaultSecretIdKey` — Key in the source secret for the Vault AppRole secret ID. Defaults to `secret_id`.
@@ -154,9 +192,9 @@ Enable optional secret synchronization after the pre-provision cron job runs. Th
 - `job.failedJobsHistoryLimit` — Number of failed sync jobs to keep. Defaults to `1`.
 - `job.backoffLimit` — Backoff limit for the sync job. Defaults to `4`.
 - `job.restartPolicy` — Pod restart policy. Defaults to `OnFailure`.
-- `job.podAnnotations` — Annotations to add to the sync job pod.
-- `job.podLabels` — Labels to add to the sync job pod.
-- `job.resources` — Resource requests and limits for the sync container.
+- `job.podAnnotations` — Annotations to add to the sync job pod. Defaults to `{}`.
+- `job.podLabels` — Labels to add to the sync job pod. Defaults to `{}`.
+- `job.resources` — Resource requests and limits for the sync container. Defaults to `{}`.
 
 #### Example: Enable sync with a scheduled CronJob
 
@@ -183,9 +221,3 @@ sync:
 ```
 
 > **NOTICE:** This job must be run before changes are reflected in OpenShift. For applications requiring dynamic secrets, Vault should be connected to during runtime. Consider using the Vault Agent Sidecar Injector for dynamic secret rotation.
-
-## Uninstall
-
-```bash
-helm uninstall knox-provision
-```
