@@ -1,6 +1,6 @@
 apiVersion: v2
 name: cronjob-deployment
-description: Helm chart for provisioning a NR Broker service with secrets
+description: CronJob that periodically provisions and refreshes a Knox Vault AppRole secret ID via NR Broker, storing it alongside the role ID so pods can authenticate without manual secret renewal.
 type: application
 version: 1.0.0
 appVersion: "1.0.0"

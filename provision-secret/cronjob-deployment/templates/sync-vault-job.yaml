@@ -1,4 +1,6 @@
 {{- if .Values.sync.enabled }}
+{{- $syncSecret := .Values.sync.sourceSecret }}
+{{- if not $syncSecret.name }}{{ $syncSecret = .Values.targetSecret }}{{ end }}
 {{- if .Values.sync.schedule }}
 apiVersion: batch/v1
 kind: CronJob
@@ -20,17 +22,17 @@ spec:
           labels:
             {{- include "cronjob-deployment.selectorLabels" . | nindent 12 }}
             app.kubernetes.io/component: sync
-            {{- with .Values.sync.job.podLabels }}
+            {{- with (merge (deepCopy .Values.sync.job.podLabels) .Values.global.podLabels) }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-          {{- with .Values.sync.job.podAnnotations }}
+          {{- with (merge (deepCopy .Values.sync.job.podAnnotations) .Values.global.podAnnotations) }}
           annotations:
             {{- toYaml . | nindent 12 }}
           {{- end }}
         spec:
           serviceAccountName: {{ include "cronjob-deployment.serviceAccountName" . }}
           restartPolicy: {{ .Values.sync.job.restartPolicy }}
-          {{- with .Values.image.pullSecrets }}
+          {{- with .Values.global.pullSecrets }}
           imagePullSecrets:
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -43,17 +45,19 @@ spec:
                 - name: VAULT_ADDR
                   value: {{ .Values.global.vaultAddress | quote }}
                 - name: SECRET_SOURCE_NAME
-                  value: {{ .Values.sync.sourceSecret.name | quote }}
+                  value: {{ $syncSecret.name | quote }}
                 - name: VAULT_ROLE_ID_KEY
-                  value: {{ .Values.sync.sourceSecret.vaultRoleIdKey | quote }}
+                  value: {{ $syncSecret.vaultRoleIdKey | quote }}
                 - name: VAULT_SECRET_ID_KEY
-                  value: {{ .Values.sync.sourceSecret.vaultSecretIdKey | quote }}
+                  value: {{ $syncSecret.vaultSecretIdKey | quote }}
                 - name: SYNC_VAULT_PATHS
                   value: {{ .Values.sync.vaultPaths | quote }}
                 - name: SYNC_SECRET_NAMES
                   value: {{ .Values.sync.secretNames | quote }}
+              {{- with (merge (deepCopy .Values.sync.job.resources) .Values.global.resources) }}
               resources:
-                {{- toYaml .Values.sync.job.resources | nindent 16 }}
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
 {{- else }}
 apiVersion: batch/v1
 kind: Job
@@ -69,17 +73,17 @@ spec:
       labels:
         {{- include "cronjob-deployment.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: sync
-        {{- with .Values.sync.job.podLabels }}
+        {{- with (merge (deepCopy .Values.sync.job.podLabels) .Values.global.podLabels) }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with .Values.sync.job.podAnnotations }}
+      {{- with (merge (deepCopy .Values.sync.job.podAnnotations) .Values.global.podAnnotations) }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
       serviceAccountName: {{ include "cronjob-deployment.serviceAccountName" . }}
       restartPolicy: {{ .Values.sync.job.restartPolicy }}
-      {{- with .Values.image.pullSecrets }}
+      {{- with .Values.global.pullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -92,16 +96,18 @@ spec:
             - name: VAULT_ADDR
               value: {{ .Values.global.vaultAddress | quote }}
             - name: SECRET_SOURCE_NAME
-              value: {{ .Values.sync.sourceSecret.name | quote }}
+              value: {{ $syncSecret.name | quote }}
             - name: VAULT_ROLE_ID_KEY
-              value: {{ .Values.sync.sourceSecret.vaultRoleIdKey | quote }}
+              value: {{ $syncSecret.vaultRoleIdKey | quote }}
             - name: VAULT_SECRET_ID_KEY
-              value: {{ .Values.sync.sourceSecret.vaultSecretIdKey | quote }}
+              value: {{ $syncSecret.vaultSecretIdKey | quote }}
             - name: SYNC_VAULT_PATHS
               value: {{ .Values.sync.vaultPaths | quote }}
             - name: SYNC_SECRET_NAMES
               value: {{ .Values.sync.secretNames | quote }}
+          {{- with (merge (deepCopy .Values.sync.job.resources) .Values.global.resources) }}
           resources:
-            {{- toYaml .Values.sync.job.resources | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
 {{- end }}
 {{- end }}

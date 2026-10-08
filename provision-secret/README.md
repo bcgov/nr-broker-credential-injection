@@ -112,6 +112,10 @@ Override values in `cronjob-deployment/values.yaml` to suit your environment. Th
 - `name` — Release name. Defaults to `knox-provision`.
 - `vaultAddress` — Knox Vault address. Defaults to `https://knox.io.nrs.gov.bc.ca`.
 - `brokerAddress` — NR Broker address. Defaults to `https://broker.io.nrs.gov.bc.ca`.
+- `podAnnotations` — Default annotations applied to every job pod in the chart. Per-job values under `cron.podAnnotations` and `sync.job.podAnnotations` are merged on top of these. Defaults to `{}`.
+- `podLabels` — Default labels applied to every job pod in the chart. Per-job values under `cron.podLabels` and `sync.job.podLabels` are merged on top of these. Defaults to `{}`.
+- `resources` — Default resource requests and limits applied to every job container. Per-job values under `cron.resources` and `sync.job.resources` are merged on top of these. Defaults to `{}`.
+- `pullSecrets` — Release-level image pull secrets for private registries, applied to every job pod. Defaults to `[]`.
 
 ### `cron`
 
@@ -121,9 +125,9 @@ Override values in `cronjob-deployment/values.yaml` to suit your environment. Th
 - `failedJobsHistoryLimit` — Number of failed jobs to keep. Defaults to `1`.
 - `backoffLimit` — Backoff limit for the job. Defaults to `1`.
 - `restartPolicy` — Pod restart policy. Defaults to `OnFailure`.
-- `podAnnotations` — Annotations to add to the CronJob pod. Defaults to `{}`.
-- `podLabels` — Labels to add to the CronJob pod. Defaults to `{}`.
-- `resources` — Resource requests and limits for the container. Defaults to `{}`.
+- `podAnnotations` — Annotations to add to the CronJob pod, merged on top of `global.podAnnotations`. Defaults to `{}`.
+- `podLabels` — Labels to add to the CronJob pod, merged on top of `global.podLabels`. Defaults to `{}`.
+- `resources` — Resource requests and limits for the container, merged on top of `global.resources`. Defaults to `{}`.
 
 ### `image`
 
@@ -131,7 +135,8 @@ Override values in `cronjob-deployment/values.yaml` to suit your environment. Th
 - `repository` — Container image repository. Defaults to `bcgov/nr-broker-credential-injection/intention-provision-secret`.
 - `tag` — Container image tag. Defaults to `v3.0.2`.
 - `pullPolicy` — Image pull policy. Defaults to `IfNotPresent`.
-- `pullSecrets` — Image pull secrets for private registries. Defaults to `[]`.
+
+> Image pull secrets are configured at the release level via `global.pullSecrets`, not under `image`.
 
 ### `sourceSecret`
 
@@ -184,17 +189,15 @@ Treat this as a compatibility or transitional option rather than the preferred l
 - `schedule` — Cron expression for the sync job. Defaults to an empty value, which creates a one-time Job instead of a CronJob.
 - `vaultPaths` — Comma-separated list of Vault secret paths to read (e.g., `"secret/data/app-config,secret/data/db-credentials"`). Defaults to an empty value.
 - `secretNames` — Comma-separated list of OpenShift secret names to create/update (must match the count of `vaultPaths`). Defaults to an empty value.
-- `sourceSecret.name` — Name of the secret containing AppRole credentials for Vault login. Defaults to `knox-secret`.
-- `sourceSecret.vaultRoleIdKey` — Key in the source secret for the Vault AppRole role ID. Defaults to `role_id`.
-- `sourceSecret.vaultSecretIdKey` — Key in the source secret for the Vault AppRole secret ID. Defaults to `secret_id`.
+- `sourceSecret` — Optional override for the source secret containing AppRole credentials (for login). When unset or empty, the sync job uses `targetSecret` by default. When provided, it should include `name`, `vaultRoleIdKey`, and `vaultSecretIdKey` (the sync job does not use `brokerTokenKey`). Defaults to `{}`.
 - `job.concurrencyPolicy` — How to handle concurrent sync runs. Defaults to `Forbid`.
 - `job.successfulJobsHistoryLimit` — Number of successful sync jobs to keep. Defaults to `3`.
 - `job.failedJobsHistoryLimit` — Number of failed sync jobs to keep. Defaults to `1`.
 - `job.backoffLimit` — Backoff limit for the sync job. Defaults to `4`.
 - `job.restartPolicy` — Pod restart policy. Defaults to `OnFailure`.
-- `job.podAnnotations` — Annotations to add to the sync job pod. Defaults to `{}`.
-- `job.podLabels` — Labels to add to the sync job pod. Defaults to `{}`.
-- `job.resources` — Resource requests and limits for the sync container. Defaults to `{}`.
+- `job.podAnnotations` — Annotations to add to the sync job pod, merged on top of `global.podAnnotations`. Defaults to `{}`.
+- `job.podLabels` — Labels to add to the sync job pod, merged on top of `global.podLabels`. Defaults to `{}`.
+- `job.resources` — Resource requests and limits for the sync container, merged on top of `global.resources`. Defaults to `{}`.
 
 #### Example: Enable sync with a scheduled CronJob
 
@@ -204,10 +207,12 @@ sync:
   schedule: "0 3 * * *"  # Run daily at 03:00, after the provision cron at 02:00
   vaultPaths: "secret/data/myapp/config,secret/data/myapp/db"
   secretNames: "myapp-config-secret,myapp-db-secret"
-  sourceSecret:
-    name: "knox-secret"
-    vaultRoleIdKey: "role_id"
-    vaultSecretIdKey: "secret_id"
+  # sourceSecret is optional; it defaults to targetSecret when omitted.
+  # sourceSecret:
+  #   name: "knox-secret"
+  #   brokerTokenKey: "token"
+  #   vaultRoleIdKey: "role_id"
+  #   vaultSecretIdKey: "secret_id"
 ```
 
 #### Example: Enable sync as a one-time Job
