@@ -1,6 +1,6 @@
 apiVersion: v2
 name: webapp-deployment
-description: A Helm chart for Kubernetes
+description: Demo Helm chart deploying a NestJS app to OpenShift that retrieves runtime Knox Vault secrets via a pre-provisioned AppRole secret (Vault Agent sink to file).
 
 # A chart can be either an 'application' or a 'library' chart.
 #

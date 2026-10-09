@@ -2,13 +2,20 @@ global:
   name: "knox-provision"
   vaultAddress: "https://knox.io.nrs.gov.bc.ca"
   brokerAddress: "https://broker.io.nrs.gov.bc.ca"
+  # Default annotations and labels applied to every job pod in the chart.
+  # Per-job values under cron and sync.job are merged on top of these defaults.
+  podAnnotations: {}
+  podLabels: {}
+  # Release-level defaults shared by every job. Per-job overrides under
+  # cron and sync.job are merged on top of these.
+  resources: {}
+  pullSecrets: []
 
 image:
   registry: "artifacts.developer.gov.bc.ca/github-docker-remote/"
   repository: "bcgov/nr-broker-credential-injection/intention-provision-secret"
-  tag: "v3.0.2"
+  tag: "v4.1.0"
   pullPolicy: IfNotPresent
-  pullSecrets: []
 
 cron:
   schedule: "0 2 * * *"
@@ -17,6 +24,7 @@ cron:
   failedJobsHistoryLimit: 1
   backoffLimit: 1
   restartPolicy: OnFailure
+  # Per-job overrides; merged on top of the matching global.* defaults.
   podAnnotations: {}
   podLabels: {}
   resources: {}
@@ -85,11 +93,9 @@ sync:
   # Example: "app-config-secret,db-credentials-secret"
   secretNames: ""
 
-  # Source secret containing AppRole credentials (for login)
-  sourceSecret:
-    name: "knox-secret"
-    vaultRoleIdKey: "role_id"
-    vaultSecretIdKey: "secret_id"
+  # Optional override for the source secret containing AppRole credentials (for login).
+  # When unset or empty, the sync job uses targetSecret by default.
+  sourceSecret: {}
 
   # Sync job configuration
   job:
@@ -98,6 +104,7 @@ sync:
     failedJobsHistoryLimit: 1
     backoffLimit: 4
     restartPolicy: OnFailure
+    # Per-job overrides; merged on top of the matching global.* defaults.
     podAnnotations: {}
     podLabels: {}
     resources: {}
