@@ -16,17 +16,17 @@ spec:
         metadata:
           labels:
             {{- include "cronjob-deployment.selectorLabels" . | nindent 12 }}
-            {{- with .Values.cron.podLabels }}
+            {{- with (merge (deepCopy .Values.cron.podLabels) .Values.global.podLabels) }}
              {{- toYaml . | nindent 12 }}
              {{- end }}
-           {{- with .Values.cron.podAnnotations }}
+           {{- with (merge (deepCopy .Values.cron.podAnnotations) .Values.global.podAnnotations) }}
           annotations:
             {{- toYaml . | nindent 12 }}
           {{- end }}
         spec:
           serviceAccountName: {{ include "cronjob-deployment.serviceAccountName" . }}
           restartPolicy: {{ .Values.cron.restartPolicy }}
-          {{- with .Values.image.pullSecrets }}
+          {{- with .Values.global.pullSecrets }}
           imagePullSecrets:
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -68,5 +68,7 @@ spec:
                   value: {{ .Values.targetSecret.vaultRoleIdKey | quote }}
                 - name: OPENSHIFT_SECRET_ID_KEY
                   value: {{ .Values.targetSecret.vaultSecretIdKey | quote }}
+              {{- with (merge (deepCopy .Values.cron.resources) .Values.global.resources) }}
               resources:
-                 {{- toYaml .Values.cron.resources | nindent 16 }}
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
